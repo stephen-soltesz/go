@@ -17,10 +17,10 @@ go-bindata:
 
 Finally:
 
-    go get thinkseedo.com/go/cmds/lineviewer
+    go get github.com/stephen-soltesz/go/cmds/lineviewer
 
 You may need to manually, run 'make', to generate the gopherjs and bindata
 dependencies for the lineviewer.
 
-    cd $GOPATH/src/thinkseedo.com/go/cmds/lineviewer
+    cd $GOPATH/src/github.com/stephen-soltesz/go/cmds/lineviewer
 		make
