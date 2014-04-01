@@ -12,7 +12,7 @@ GopherJS:
 
 go-bindata:
 
-		go get github.com/jteeuwen/go-bindata
+    go get github.com/jteeuwen/go-bindata
 
 
 Finally:
@@ -23,4 +23,4 @@ You may need to manually, run 'make', to generate the gopherjs and bindata
 dependencies for the lineviewer.
 
     cd $GOPATH/src/github.com/stephen-soltesz/go/cmds/lineviewer
-		make
+    make
