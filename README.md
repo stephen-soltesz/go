@@ -3,23 +3,22 @@ ThinkSeeDo Go Packages
 
 Custom Go packages. Command line tools are in the `cmds` directory.
 
+### Install Pipeline Viewer
+
+All command and package sources include any generated sources. So, `go get`
+works right away.
+
+    go get github.com/stephen-soltesz/go/cmds/lineprobe
+    go get github.com/stephen-soltesz/go/cmds/lineviewer
+
 ### Dependencies
 
-GopherJS:
+To recreate the generated sources, install these dependencies.
+
+GopherJS - translates syntacically correct go code to javascript.
 
     go get github.com/gopherjs/gopherjs
 
-go-bindata:
+go-bindata - converts binary assets into go code to be bundled with go binaries.
 
     go get github.com/jteeuwen/go-bindata
-
-
-### Build
-
-    go get github.com/stephen-soltesz/go/cmds/lineviewer
-
-You may need to manually, run 'make', to generate the gopherjs and bindata
-dependencies for the lineviewer.
-
-    cd $GOPATH/src/github.com/stephen-soltesz/go/cmds/lineviewer
-    make
