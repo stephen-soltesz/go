@@ -1,4 +1,4 @@
-go
-==
+ThinkSeeDo Go Packages
+======================
 
-go packages and tools
+Go packages and command line tools are in the `cmds` directory.
