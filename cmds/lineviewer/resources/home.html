@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Pipeline Viewer</title>
+	<link rel="stylesheet" type="text/css" href="home.css"/>
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+	<script src="clientview.js" type="text/javascript"></script>
+	<script type="text/javascript">
+		$(function() {
+				setupSocket("#container");
+		});
+	</script>
+</head>
+<body>
+		<div class="plot-container">
+			<div id="container"></div>
+			<div id="log"></div>
+			<a id="mylink" onclick="saveImage('#mycanvas', '#mylink');" href="#">Save as file.</a>
+		</div>
+</body>
+</html>
