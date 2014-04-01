@@ -3,8 +3,7 @@ ThinkSeeDo Go Packages
 
 Go packages and command line tools are in the `cmds` directory.
 
-Depends on
-==========
+### Dependencies
 
 GopherJS:
 
@@ -15,7 +14,7 @@ go-bindata:
     go get github.com/jteeuwen/go-bindata
 
 
-Finally:
+### Build
 
     go get github.com/stephen-soltesz/go/cmds/lineviewer
 
