@@ -20,6 +20,7 @@ import (
 	"math"
 	"image/color"
 	"encoding/hex"
+	"time"
 
 	// third party
 	"github.com/stephen-soltesz/go/plotter"
@@ -185,7 +186,14 @@ func (c *Collection) Plot(writer io.Writer, width, height int, usetime bool) err
 
 	fig := plotter.NewFigure()
 	for _, ax := range c.Axes {
-		xmax := ax.MaxX()
+		xmax := 0.0
+		if usetime {
+			// continuously update plot with most current time.
+			// TODO: make this an option.
+			xmax = float64(time.Now().Unix())
+		} else {
+			xmax = ax.MaxX()
+		}
 		chart := fig.AddChart(c.Title, ax.XLabel, ax.YLabel, xmax-240, xmax, usetime)
 		for _, line := range ax.Lines {
 			if xc, _ := line.Count(); xc > 0 {
