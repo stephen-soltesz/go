@@ -68,7 +68,7 @@ func (client *CollectorClient) readSettings(val string) {
 			fmt.Println("NOT YET SUPPORTED")
 		} else {
 			// unknown command
-			fmt.Println("Unknown command.")
+			fmt.Println("Unknown command.", fields[0])
 		}
 	} else if len(fields) >= 2 {
 		// this is a key-value setting.
@@ -99,7 +99,7 @@ func (client *CollectorClient) getNextYvalue() (float64, error) {
 	if err != nil {
 		return 0.0, err
 	}
-	if len(val) > 0 && !(val[0] >= '0' && val[0] <= '9') {
+	if len(val) > 0 && !((val[0] >= '0' && val[0] <= '9') || val[0] == '.' || val[0] == '-') {
 		// read settings
 		debugLogger.Print("CLIENT: reading settings: ", val)
 		client.readSettings(strings.TrimSpace(val))
