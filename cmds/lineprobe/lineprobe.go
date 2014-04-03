@@ -68,7 +68,7 @@ func NewValueReader() *ValueReader {
 	return &reader
 }
 
-func (r *ValueReader) Setup() {
+func (r *ValueReader) Setup() error {
   var fromStdin bool = ("" == *command)
 
 	if fromStdin {
@@ -77,14 +77,15 @@ func (r *ValueReader) Setup() {
     cmd := exec.Command("bash", "-c", *command)
     output, err := cmd.StdoutPipe();
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		if err := cmd.Start(); err != nil {
-			log.Fatal(err)
+			return err
 		}
+		go cmd.Wait()
 		r.reader = bufio.NewReader(output)
 	}
-	return
+	return nil
 }
 
 func (r *ValueReader) GetValue() []byte {
@@ -98,7 +99,10 @@ func (r *ValueReader) GetValue() []byte {
     return nil
   } else if err == io.EOF {
     time.Sleep(time.Duration(*interval) * time.Second)
-		r.Setup()
+		err := r.Setup()
+		if err != nil {
+			log.Fatal(err)
+		}
 		return r.GetValue()
 	} else if err != nil {
     log.Fatal(err)
