@@ -31,6 +31,8 @@ var (
 	collectorPort = flag.Int("collector_port", 3131, "Port for data collector.")
 	timestamp = flag.Bool("timestamp", false, "Use timestamps as x-axis.")
 	debug = flag.Bool("debug", false, "Enable debug messages on stderr.")
+	plotWidth = flag.Int("plot_width", 600, "Plot width in pixels.")
+	plotHeight = flag.Int("plot_height", 400, "Plot height in pixels.")
 	debugLogger *log.Logger
 )
 
