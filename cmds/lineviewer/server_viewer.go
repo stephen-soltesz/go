@@ -136,7 +136,7 @@ func pngToUri(data []byte) []byte {
 func getPngUri() []byte {
 	var pngimg bytes.Buffer
 	collector := collection.Default()
-	if err := collector.Plot(&pngimg, 600, 400, *timestamp); err != nil {
+	if err := collector.Plot(&pngimg, *plotWidth, *plotHeight, *timestamp); err != nil {
 		return nil
 	}
 	return pngToUri(pngimg.Bytes())
@@ -204,6 +204,9 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 	hub.register <- c
 	debugLogger.Printf("ws:Starting read/write pumps %s\n", r.Host)
 	go c.writePump()
+	// send canvas size as first message.
+	msgStr := fmt.Sprintf("%d,%d\n", *plotWidth, *plotHeight)
+	c.write(websocket.TextMessage, []byte(msgStr))
 	go c.genMessages()
 	c.readPump()
 }
