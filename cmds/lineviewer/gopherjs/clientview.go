@@ -2,6 +2,8 @@ package main
 
 import "github.com/gopherjs/gopherjs/js"
 import "github.com/gopherjs/jquery"
+import "strings"
+import "strconv"
 
 var jQuery = jquery.NewJQuery
 
@@ -43,8 +45,7 @@ func updateCanvas(name, uri string) {
 }
 
 func setupSocket(containerName string) {
-
-	addCanvas(containerName, "mycanvas", 600, 400);
+	var firstRun = true;
 
 	websocket := js.Global.Get("WebSocket")
 	if (websocket != nil) {
@@ -53,9 +54,34 @@ func setupSocket(containerName string) {
 			appendLog(jQuery("<div><b>Connection closed.</b></div>"))
 		})
 		conn.Set("onmessage", func (evt js.Object) {
-			uri := evt.Get("data").String()
-			//println(uri)
-			updateCanvas("#mycanvas", uri)
+			if firstRun {
+				println("adding canvas")
+				sizeString := strings.TrimSpace(evt.Get("data").String())
+				println("sizestring:", sizeString)
+				sizes := strings.Split(sizeString, ",")
+				if len(sizes) == 2 {
+					var width int
+					var height int
+					var err error
+					if width, err = strconv.Atoi(sizes[0]); err != nil {
+						width = 600
+					}
+					if height, err = strconv.Atoi(sizes[1]); err != nil {
+						height = 400
+					}
+					println("addCanvas:", width, ":", height)
+					addCanvas(containerName, "mycanvas", width, height)
+				} else {
+					// use defaults
+					println("addCanvas: defaults")
+					addCanvas(containerName, "mycanvas", 600, 400)
+				}
+				firstRun = false;
+			} else {
+				//println(uri)
+				uri := evt.Get("data").String()
+				updateCanvas("#mycanvas", uri)
+			}
 		})
 	} else {
 		appendLog(jQuery("<div><b>Your browser does not support WebSockets.</b></div>"))
