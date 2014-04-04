@@ -16,8 +16,10 @@ import (
 	// third-party
   "code.google.com/p/freetype-go/freetype"
   "code.google.com/p/freetype-go/freetype/truetype"
-  "github.com/vdobler/chart"
-	"github.com/vdobler/chart/imgg"
+  //"github.com/vdobler/chart"
+	//"github.com/vdobler/chart/imgg"
+  "github.com/stephen-soltesz/chart"
+	"github.com/stephen-soltesz/chart/imgg"
 )
 
 type Style chart.Style
