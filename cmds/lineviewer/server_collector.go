@@ -6,24 +6,24 @@ import (
 	"fmt"
 	"io"
 	"os"
-  //"math/rand"
+	//"math/rand"
+	"github.com/stephen-soltesz/go/collection"
+	"github.com/stephen-soltesz/go/lineserver"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
-	"github.com/stephen-soltesz/go/collection"
-	"github.com/stephen-soltesz/go/lineserver"
 )
 
 var configPattern = regexp.MustCompile("axis|reset|exit|color|label")
 var configError = errors.New("Matches configPattern")
 
 type CollectorClient struct {
-	reader *bufio.ReadWriter
+	reader    *bufio.ReadWriter
 	collector *collection.Collection
-	axis *collection.Axis
-	line *collection.Line
-	id int
+	axis      *collection.Axis
+	line      *collection.Line
+	id        int
 }
 
 func startCollectorServer(host string, port int, collector *collection.Collection) {
@@ -136,7 +136,7 @@ func handleClient(client *CollectorClient) {
 			client.axis = client.collector.GetAxis("default")
 		}
 		if client.line == nil {
-		  client.line = client.axis.GetLine(fmt.Sprintf("Thread-%d", client.id))
+			client.line = client.axis.GetLine(fmt.Sprintf("Thread-%d", client.id))
 		}
 		client.line.Append(x, y)
 	}

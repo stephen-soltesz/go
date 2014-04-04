@@ -17,24 +17,24 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
-	"io/ioutil"
 
 	"github.com/stephen-soltesz/go/collection"
-  //"github.com/vdobler/chart"
-  "github.com/stephen-soltesz/chart"
+	//"github.com/vdobler/chart"
+	"github.com/stephen-soltesz/chart"
 )
 
 var (
-	bindAddress = flag.String("hostname", "localhost", "Interface to bind to.")
-	viewerPort = flag.Int("viewer_port", 8080, "Port for web viewer.")
+	bindAddress   = flag.String("hostname", "localhost", "Interface to bind to.")
+	viewerPort    = flag.Int("viewer_port", 8080, "Port for web viewer.")
 	collectorPort = flag.Int("collector_port", 3131, "Port for data collector.")
-	timestamp = flag.Bool("timestamp", false, "Use timestamps as x-axis.")
-	debug = flag.Bool("debug", false, "Enable debug messages on stderr.")
-	plotWidth = flag.Int("plot_width", 600, "Plot width in pixels.")
-	plotHeight = flag.Int("plot_height", 400, "Plot height in pixels.")
-	debugLogger *log.Logger
+	timestamp     = flag.Bool("timestamp", false, "Use timestamps as x-axis.")
+	debug         = flag.Bool("debug", false, "Enable debug messages on stderr.")
+	plotWidth     = flag.Int("plot_width", 600, "Plot width in pixels.")
+	plotHeight    = flag.Int("plot_height", 400, "Plot height in pixels.")
+	debugLogger   *log.Logger
 )
 
 func checkFlags() {

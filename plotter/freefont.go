@@ -1,10 +1,10 @@
 package plotter
 
 import (
-    "bytes"
-    "compress/gzip"
-    "fmt"
-    "io"
+	"bytes"
+	"compress/gzip"
+	"fmt"
+	"io"
 )
 
 func bindata_read(data []byte, name string) ([]byte, error) {
@@ -12386,11 +12386,10 @@ func res_freesans_ttf() ([]byte, error) {
 		0x71, 0x58, 0x3f, 0x20, 0x89, 0x08, 0x29, 0xda, 0x96, 0x1a, 0x40, 0xaa,
 		0xd9, 0x86, 0xfd, 0x98, 0xf8, 0xff, 0x05, 0x00, 0x00, 0xff, 0xff, 0xe4,
 		0xc8, 0xf0, 0xb1, 0x88, 0x07, 0x04, 0x00,
-		},
+	},
 		"res/FreeSans.ttf",
 	)
 }
-
 
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
@@ -12403,7 +12402,6 @@ func Asset(name string) ([]byte, error) {
 }
 
 // _bindata is a table, holding each asset generator, mapped to its name.
-var _bindata = map[string] func() ([]byte, error) {
+var _bindata = map[string]func() ([]byte, error){
 	"res/FreeSans.ttf": res_freesans_ttf,
-
 }

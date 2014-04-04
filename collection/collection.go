@@ -11,15 +11,15 @@ Since collections exist to help with plotting line data, there is one
 convenience function for plotting. To generate an image representing the
 collection data, use:
 
-		collection.Plot() 
+		collection.Plot()
 */
 package collection
 
 import (
+	"encoding/hex"
+	"image/color"
 	"io"
 	"math"
-	"image/color"
-	"encoding/hex"
 	"time"
 
 	// third party
@@ -32,24 +32,24 @@ var defaultCollection *Collection
 // Axes is a map, so that Axis objects can be referred to by name, see GetAxis().
 type Collection struct {
 	Title string
-  Axes map[string]*Axis
+	Axes  map[string]*Axis
 }
 
 // A Collection contains one or more Axis objects.
 type Axis struct {
-	Name string
+	Name   string
 	XLabel string
 	YLabel string
-  Lines map[string]*Line
+	Lines  map[string]*Line
 }
 
 // An Axis contains one or more Line objects.
 // The X and Y arrays contain coordinates of each point on the Line.
 type Line struct {
-  Name string
-  Style plotter.Style
-  X []float64
-  Y []float64
+	Name  string
+	Style plotter.Style
+	X     []float64
+	Y     []float64
 
 	// internal book keeping
 	xyrange
@@ -65,21 +65,21 @@ type xyrange struct {
 
 func initXYrange() xyrange {
 	return xyrange{math.SmallestNonzeroFloat64, math.MaxFloat64,
-								 math.SmallestNonzeroFloat64, math.MaxFloat64}
+		math.SmallestNonzeroFloat64, math.MaxFloat64}
 }
 
 func (xy *xyrange) updateXYrange(x, y float64) {
-  xy.min_x = math.Min(x, xy.min_x)
-  xy.max_x = math.Max(x, xy.max_x)
+	xy.min_x = math.Min(x, xy.min_x)
+	xy.max_x = math.Max(x, xy.max_x)
 
-  xy.min_y = math.Min(y, xy.min_y)
-  xy.max_y = math.Max(y, xy.max_y)
+	xy.min_y = math.Min(y, xy.min_y)
+	xy.max_y = math.Max(y, xy.max_y)
 }
 
 func New() *Collection {
 	c := &Collection{}
 	c.Axes = make(map[string]*Axis)
-  return c
+	return c
 }
 
 func Default() *Collection {
@@ -116,12 +116,12 @@ func (ax *Axis) GetLine(name string) *Line {
 }
 
 func (ax *Axis) AddLine(name string) *Line {
-  line := &Line{}
-  line.Name = name
-  line.Style = plotter.NextStyle()
+	line := &Line{}
+	line.Name = name
+	line.Style = plotter.NextStyle()
 	line.xyrange = initXYrange()
 	ax.Lines[name] = line
-  return line
+	return line
 }
 
 func (line *Line) SetColor(hexColor string) {
@@ -142,31 +142,31 @@ func (line *Line) SetColor(hexColor string) {
 
 // Append adds a new x,y coordinate to the end of the Line.
 func (line *Line) Append(x, y float64) {
-  line.X = append(line.X, x)
-  line.Y = append(line.Y, y)
+	line.X = append(line.X, x)
+	line.Y = append(line.Y, y)
 	line.xyrange.updateXYrange(x, y)
 }
 
 // Count returns the length of Line X and Y coordinates.
 func (line *Line) Count() (int, int) {
-  return len(line.X), len(line.Y)
+	return len(line.X), len(line.Y)
 }
 
 func (line *Line) RangeX() (float64, float64) {
-  min := line.xyrange.min_x-0.1
-  max := line.xyrange.max_x+0.1
-  return min, max
+	min := line.xyrange.min_x - 0.1
+	max := line.xyrange.max_x + 0.1
+	return min, max
 }
 
 func (line *Line) RangeY() (float64, float64) {
-  min := line.xyrange.min_y-0.1
-  max := line.xyrange.max_y+0.1
-  return min, max
+	min := line.xyrange.min_y - 0.1
+	max := line.xyrange.max_y + 0.1
+	return min, max
 }
 
 // MaxX returns the greatest X coordinate for all Lines in this Axis.
 func (ax *Axis) MaxX() float64 {
-  xmax := 0.0
+	xmax := 0.0
 	if len(ax.Lines) == 0 {
 		return xmax
 	}
@@ -197,7 +197,7 @@ func (c *Collection) Plot(writer io.Writer, width, height int, usetime bool) err
 		chart := fig.AddChart(c.Title, ax.XLabel, ax.YLabel, xmax-240, xmax, usetime)
 		for _, line := range ax.Lines {
 			if xc, _ := line.Count(); xc > 0 {
-			  chart.AddData(line.Name, line.X, line.Y, line.Style)
+				chart.AddData(line.Name, line.X, line.Y, line.Style)
 			}
 		}
 	}

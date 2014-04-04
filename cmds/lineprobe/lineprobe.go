@@ -24,7 +24,7 @@ These are command-line options.
 Examples
 
 Reading data from stdin:
-    while /usr/bin/true; do ps ax | wc -l ; sleep 1 ; done | lineprobe 
+    while /usr/bin/true; do ps ax | wc -l ; sleep 1 ; done | lineprobe
 
 Reading data from command output:
     lineprobe --command "ps ax | wc -l" --interval 2.0
@@ -33,29 +33,29 @@ Reading data from command output:
 package main
 
 import (
-  "bufio"
-  "flag"
-  "fmt"
-  "log"
+	"bufio"
+	"flag"
+	"fmt"
 	"io"
-  "os"
-  "os/exec"
-  "time"
+	"log"
+	"os"
+	"os/exec"
+	"time"
 
 	// third-party
 	"github.com/stephen-soltesz/go/lineserver"
 )
 
 var (
-  hostname = flag.String("hostname", "localhost:3131", "Host and port of view server.")
-  command = flag.String("command", "", "Command to run every second.")
-  interval = flag.Float64("interval", 1.0, "How often to run command.")
-  axisName = flag.String("axis", "default", "Name of axis to associate this line.")
-  xlabelName = flag.String("xlabel", "", "X-Label for axis.")
-  ylabelName = flag.String("ylabel", "", "Y-Label for axis.")
-  lineName = flag.String("label", "", "Line label name on axis.")
-  lineColor = flag.String("color", "", "Color of line. Chosen automatically by default.")
-  quietOutput = flag.Bool("q", false, "Whether to echo values sent to server.")
+	hostname    = flag.String("hostname", "localhost:3131", "Host and port of view server.")
+	command     = flag.String("command", "", "Command to run every second.")
+	interval    = flag.Float64("interval", 1.0, "How often to run command.")
+	axisName    = flag.String("axis", "default", "Name of axis to associate this line.")
+	xlabelName  = flag.String("xlabel", "", "X-Label for axis.")
+	ylabelName  = flag.String("ylabel", "", "Y-Label for axis.")
+	lineName    = flag.String("label", "", "Line label name on axis.")
+	lineColor   = flag.String("color", "", "Color of line. Chosen automatically by default.")
+	quietOutput = flag.Bool("q", false, "Whether to echo values sent to server.")
 )
 
 type ValueReader struct {
@@ -69,13 +69,13 @@ func NewValueReader() *ValueReader {
 }
 
 func (r *ValueReader) Setup() error {
-  var fromStdin bool = ("" == *command)
+	var fromStdin bool = ("" == *command)
 
 	if fromStdin {
 		r.reader = bufio.NewReader(os.Stdin)
 	} else {
-    cmd := exec.Command("bash", "-c", *command)
-    output, err := cmd.StdoutPipe();
+		cmd := exec.Command("bash", "-c", *command)
+		output, err := cmd.StdoutPipe()
 		if err != nil {
 			return err
 		}
@@ -89,37 +89,37 @@ func (r *ValueReader) Setup() error {
 }
 
 func (r *ValueReader) GetValue() []byte {
-  var err error
-  var lineTooLong bool
-  var out []byte
+	var err error
+	var lineTooLong bool
+	var out []byte
 
-  out, lineTooLong, err = r.reader.ReadLine()
-  out = append(out, '\n')
-  if lineTooLong {
-    return nil
-  } else if err == io.EOF {
-    time.Sleep(time.Duration(*interval) * time.Second)
+	out, lineTooLong, err = r.reader.ReadLine()
+	out = append(out, '\n')
+	if lineTooLong {
+		return nil
+	} else if err == io.EOF {
+		time.Sleep(time.Duration(*interval) * time.Second)
 		err := r.Setup()
 		if err != nil {
 			log.Fatal(err)
 		}
 		return r.GetValue()
 	} else if err != nil {
-    log.Fatal(err)
-  }
-  return out
+		log.Fatal(err)
+	}
+	return out
 }
 
 func SendValue(writer io.Writer, out []byte) {
-  _, err := writer.Write(out)
-  if err != nil {
-    log.Fatal(err)
-  }
+	_, err := writer.Write(out)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func sendClientSettings(writer *bufio.ReadWriter) {
 	axisSetting := "axis:" + *axisName + ":" + *xlabelName + ":" + *ylabelName + "\n"
-  SendValue(writer, []byte(axisSetting))
+	SendValue(writer, []byte(axisSetting))
 	if *lineName != "" {
 		SendValue(writer, []byte(fmt.Sprintf("label:%s\n", *lineName)))
 	}
@@ -133,14 +133,14 @@ func main() {
 	var out []byte
 	var err error
 
-  flag.Parse()
+	flag.Parse()
 	if !*quietOutput {
-		flag.VisitAll(func (f *flag.Flag) {
+		flag.VisitAll(func(f *flag.Flag) {
 			fmt.Printf("%-30s %s\n", fmt.Sprintf("-%s=%s", f.Name, f.Value), f.Usage)
 		})
 	}
 
-  server := lineserver.NewServer(*hostname)
+	server := lineserver.NewServer(*hostname)
 	if writer, err = server.Connect(); err != nil {
 		log.Fatal(err)
 	}
@@ -148,16 +148,16 @@ func main() {
 	reader := NewValueReader()
 	sendClientSettings(writer)
 
-  for {
-    if out = reader.GetValue(); out == nil {
-      continue
-    }
+	for {
+		if out = reader.GetValue(); out == nil {
+			continue
+		}
 		if !*quietOutput {
 			fmt.Print("Sending: ", string(out))
 		}
-    SendValue(writer, out)
-	  writer.Flush()
-  }
+		SendValue(writer, out)
+		writer.Flush()
+	}
 
-  return
+	return
 }

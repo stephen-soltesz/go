@@ -1,16 +1,16 @@
 package main
 
 import (
-	"errors"
 	"bytes"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"text/template"
 	"path/filepath"
 	"strings"
+	"text/template"
 	"time"
 
 	// third-party
@@ -23,7 +23,7 @@ func startViewServer(host string, port int) {
 	addr := fmt.Sprintf("%s:%d", host, port)
 	http.HandleFunc("/", serveHome)
 	http.HandleFunc("/ws", serveWs)
-  debugLogger.Printf("HTTP: listen on: %s\n", addr)
+	debugLogger.Printf("HTTP: listen on: %s\n", addr)
 	err := http.ListenAndServe(addr, nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
@@ -144,16 +144,16 @@ func getPngUri() []byte {
 }
 
 func (c *connection) genMessages() {
-  count := 0
-  for {
-    count += 1
+	count := 0
+	for {
+		count += 1
 		msg := getPngUri()
 		if msg == nil {
 			panic(errors.New("failed to convert png"))
 		}
 		c.write(websocket.TextMessage, msg)
-    time.Sleep(time.Second)
-  }
+		time.Sleep(time.Second)
+	}
 }
 
 // writePump pumps messages from the hub to the websocket connection.
@@ -191,7 +191,7 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Origin not allowed", 403)
 		return
 	}
-  debugLogger.Printf("ws:GET %s\n", r.Host)
+	debugLogger.Printf("ws:GET %s\n", r.Host)
 	ws, err := websocket.Upgrade(w, r, nil, 1024, 1024)
 	if _, ok := err.(websocket.HandshakeError); ok {
 		debugLogger.Printf("ws:Error %s %s\n", r.Host, err)
@@ -239,18 +239,18 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-    debugLogger.Printf("Error: requested: %s\n", r.URL.Path)
+		debugLogger.Printf("Error: requested: %s\n", r.URL.Path)
 		http.Error(w, "Not found", 404)
 		return
 	}
 
 	tmpl := template.Must(template.New(resourcefile).Parse(string(data)))
 	if ext == "html" {
-	  w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	} else if ext == "js" {
-	  w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
+		w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
 	} else if ext == "css" {
-	  w.Header().Set("Content-Type", "text/css; charset=utf-8")
-  }
+		w.Header().Set("Content-Type", "text/css; charset=utf-8")
+	}
 	tmpl.Execute(w, r.Host)
 }

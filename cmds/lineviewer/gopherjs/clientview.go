@@ -10,15 +10,15 @@ import (
 var jQuery = jquery.NewJQuery
 
 func appendLog(msg jquery.JQuery) {
-  var log = jQuery("#log")
+	var log = jQuery("#log")
 	d := log.Underlying().Index(0)
 	msg.AppendTo(log)
 	scrollTop := d.Get("scrollTop").Int()
 	scrollHeight := d.Get("scrollHeight").Int()
 	clientHeight := d.Get("clientHeight").Int()
-	doScroll := (scrollTop < scrollHeight - clientHeight)
-	if (doScroll) {
-		d.Set("scrollTop", scrollHeight - clientHeight)
+	doScroll := (scrollTop < scrollHeight-clientHeight)
+	if doScroll {
+		d.Set("scrollTop", scrollHeight-clientHeight)
 	}
 }
 
@@ -73,19 +73,19 @@ func setupCanvas(containerName, sizeString string) {
 }
 
 func setupSocket(containerName string) {
-	var firstRun = true;
+	var firstRun = true
 
 	websocket := js.Global.Get("WebSocket")
-	if (websocket != nil) {
+	if websocket != nil {
 		conn := websocket.New("ws://{{$}}/ws")
-		conn.Set("onclose", func (evt js.Object) {
+		conn.Set("onclose", func(evt js.Object) {
 			appendLog(jQuery("<div><b>Connection closed.</b></div>"))
 		})
-		conn.Set("onmessage", func (evt js.Object) {
+		conn.Set("onmessage", func(evt js.Object) {
 			if firstRun {
 				sizeString := strings.TrimSpace(evt.Get("data").String())
 				setupCanvas(containerName, sizeString)
-				firstRun = false;
+				firstRun = false
 			} else {
 				uri := evt.Get("data").String()
 				updateCanvas("#mycanvas", uri)
