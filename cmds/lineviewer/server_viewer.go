@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"text/template"
@@ -221,6 +222,9 @@ func splitAll(path string) (string, string, string) {
 }
 
 func serveHome(w http.ResponseWriter, r *http.Request) {
+	var data []byte
+	var err error
+
 	if r.Method != "GET" {
 		http.Error(w, "Method nod allowed", 405)
 		return
@@ -228,7 +232,12 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 	_, file, ext := splitAll(r.URL.Path)
 
 	resourcefile := fmt.Sprintf("%s/%s", localPrefix, file)
-	data, err := Asset(resourcefile)
+	if *debug {
+		data, err = ioutil.ReadFile(resourcefile)
+	} else {
+		data, err = Asset(resourcefile)
+	}
+
 	if err != nil {
     debugLogger.Printf("Error: requested: %s\n", r.URL.Path)
 		http.Error(w, "Not found", 404)
