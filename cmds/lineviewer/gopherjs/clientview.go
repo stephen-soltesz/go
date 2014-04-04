@@ -1,13 +1,13 @@
 package main
 
-import "github.com/gopherjs/gopherjs/js"
-import "github.com/gopherjs/jquery"
-import "strings"
-import "strconv"
+import (
+	"github.com/gopherjs/gopherjs/js"
+	"github.com/gopherjs/jquery"
+	"strconv"
+	"strings"
+)
 
 var jQuery = jquery.NewJQuery
-
-var conn js.Object
 
 func appendLog(msg jquery.JQuery) {
   var log = jQuery("#log")
@@ -22,26 +22,54 @@ func appendLog(msg jquery.JQuery) {
 	}
 }
 
+type Image struct {
+	js.Object
+}
+
+func newImage(src string) *Image {
+	img := js.Global.Get("Image").New()
+	img.Set("src", src)
+	return &Image{img}
+}
+
+func (img *Image) addEventListener(event string, capture bool, callback func()) {
+	img.Call("addEventListener", event, callback, capture)
+}
+
 func addCanvas(containerName, canvasName string, width, height int) {
 	document := js.Global.Get("document")
 	canvas := document.Call("createElement", "canvas")
 	canvas.Set("id", canvasName)
 	canvas.Set("width", width)
 	canvas.Set("height", height)
-	//println("create canvas")
 	jQuery(containerName).Prepend(canvas)
 }
 
 func updateCanvas(name, uri string) {
-	canvas := jQuery(name)
-	//println(canvas)
-	context := canvas.Underlying().Index(0).Call("getContext", "2d")
+	canvas := jQuery(name).Underlying().Index(0)
+	context := canvas.Call("getContext", "2d")
 
-	img := js.Global.Get("Image").New()
-	img.Set("src", uri)
-	img.Call("addEventListener", "load", func() {
-		context.Call("drawImage", img, 0, 0)
-	}, false)
+	img := newImage(uri)
+	img.addEventListener("load", false, func() {
+		context.Call("drawImage", img.Object, 0, 0)
+	})
+}
+
+func setupCanvas(containerName, sizeString string) {
+	var width int = 600
+	var height int = 400
+	var err error
+
+	sizes := strings.Split(sizeString, ",")
+	if len(sizes) == 2 {
+		if width, err = strconv.Atoi(sizes[0]); err != nil {
+			width = 600
+		}
+		if height, err = strconv.Atoi(sizes[1]); err != nil {
+			height = 400
+		}
+	}
+	addCanvas(containerName, "mycanvas", width, height)
 }
 
 func setupSocket(containerName string) {
@@ -49,36 +77,16 @@ func setupSocket(containerName string) {
 
 	websocket := js.Global.Get("WebSocket")
 	if (websocket != nil) {
-		conn = websocket.New("ws://{{$}}/ws")
+		conn := websocket.New("ws://{{$}}/ws")
 		conn.Set("onclose", func (evt js.Object) {
 			appendLog(jQuery("<div><b>Connection closed.</b></div>"))
 		})
 		conn.Set("onmessage", func (evt js.Object) {
 			if firstRun {
-				println("adding canvas")
 				sizeString := strings.TrimSpace(evt.Get("data").String())
-				println("sizestring:", sizeString)
-				sizes := strings.Split(sizeString, ",")
-				if len(sizes) == 2 {
-					var width int
-					var height int
-					var err error
-					if width, err = strconv.Atoi(sizes[0]); err != nil {
-						width = 600
-					}
-					if height, err = strconv.Atoi(sizes[1]); err != nil {
-						height = 400
-					}
-					println("addCanvas:", width, ":", height)
-					addCanvas(containerName, "mycanvas", width, height)
-				} else {
-					// use defaults
-					println("addCanvas: defaults")
-					addCanvas(containerName, "mycanvas", 600, 400)
-				}
+				setupCanvas(containerName, sizeString)
 				firstRun = false;
 			} else {
-				//println(uri)
 				uri := evt.Get("data").String()
 				updateCanvas("#mycanvas", uri)
 			}
