@@ -3638,7 +3638,11 @@ go$packages["strings"] = (function() {
 	return go$pkg;
 })();
 go$packages["main"] = (function() {
-	var go$pkg = {}, js = go$packages["github.com/gopherjs/gopherjs/js"], jquery = go$packages["github.com/gopherjs/jquery"], strings = go$packages["strings"], strconv = go$packages["strconv"], appendLog, addCanvas, updateCanvas, setupSocket, saveImage, main, jQuery, conn;
+	var go$pkg = {}, js = go$packages["github.com/gopherjs/gopherjs/js"], jquery = go$packages["github.com/gopherjs/jquery"], strconv = go$packages["strconv"], strings = go$packages["strings"], Image, appendLog, newImage, addCanvas, updateCanvas, setupCanvas, setupSocket, saveImage, main, jQuery;
+	Image = go$pkg.Image = go$newType(0, "Struct", "main.Image", "Image", "main", function(Object_) {
+		this.go$val = this;
+		this.Object = Object_ !== undefined ? Object_ : null;
+	});
 	appendLog = function(msg) {
 		var _struct, log, d, scrollTop, scrollHeight, clientHeight, doScroll;
 		log = (_struct = jQuery(new (go$sliceType(go$emptyInterface))([new Go$String("#log")])), new jquery.JQuery.Ptr(_struct.o, _struct.Jquery, _struct.Selector, _struct.Length, _struct.Context));
@@ -3652,6 +3656,18 @@ go$packages["main"] = (function() {
 			d.scrollTop = scrollHeight - clientHeight >> 0;
 		}
 	};
+	newImage = function(src) {
+		var img;
+		img = new go$global.Image();
+		img.src = go$externalize(src, Go$String);
+		return new Image.Ptr(img);
+	};
+	Image.Ptr.prototype.addEventListener = function(event, capture, callback) {
+		var img;
+		img = this;
+		img.Object.addEventListener(go$externalize(event, Go$String), go$externalize(callback, (go$funcType([], [], false))), go$externalize(capture, Go$Bool));
+	};
+	Image.prototype.addEventListener = function(event, capture, callback) { return this.go$val.addEventListener(event, capture, callback); };
 	addCanvas = function(containerName, canvasName, width, height) {
 		var document, canvas;
 		document = go$global.document;
@@ -3662,17 +3678,34 @@ go$packages["main"] = (function() {
 		jQuery(new (go$sliceType(go$emptyInterface))([new Go$String(containerName)])).Prepend(new (go$sliceType(go$emptyInterface))([canvas]));
 	};
 	updateCanvas = function(name, uri) {
-		var _struct, canvas, context, img;
-		canvas = (_struct = jQuery(new (go$sliceType(go$emptyInterface))([new Go$String(name)])), new jquery.JQuery.Ptr(_struct.o, _struct.Jquery, _struct.Selector, _struct.Length, _struct.Context));
-		context = canvas.Underlying()[0].getContext(go$externalize("2d", Go$String));
-		img = new go$global.Image();
-		img.src = go$externalize(uri, Go$String);
-		img.addEventListener(go$externalize("load", Go$String), go$externalize((function() {
-			context.drawImage(img, 0, 0);
-		}), (go$funcType([], [], false))), go$externalize(false, Go$Bool));
+		var canvas, context, img;
+		canvas = jQuery(new (go$sliceType(go$emptyInterface))([new Go$String(name)])).Underlying()[0];
+		context = canvas.getContext(go$externalize("2d", Go$String));
+		img = newImage(uri);
+		img.addEventListener("load", false, (function() {
+			context.drawImage(img.Object, 0, 0);
+		}));
+	};
+	setupCanvas = function(containerName, sizeString) {
+		var width, height, err, sizes, _tuple, _slice, _index, _tuple$1, _slice$1, _index$1;
+		width = 600;
+		height = 400;
+		err = null;
+		sizes = strings.Split(sizeString, ",");
+		if (sizes.length === 2) {
+			_tuple = strconv.Atoi((_slice = sizes, _index = 0, (_index >= 0 && _index < _slice.length) ? _slice.array[_slice.offset + _index] : go$throwRuntimeError("index out of range"))), width = _tuple[0], err = _tuple[1];
+			if (!(go$interfaceIsEqual(err, null))) {
+				width = 600;
+			}
+			_tuple$1 = strconv.Atoi((_slice$1 = sizes, _index$1 = 1, (_index$1 >= 0 && _index$1 < _slice$1.length) ? _slice$1.array[_slice$1.offset + _index$1] : go$throwRuntimeError("index out of range"))), height = _tuple$1[0], err = _tuple$1[1];
+			if (!(go$interfaceIsEqual(err, null))) {
+				height = 400;
+			}
+		}
+		addCanvas(containerName, "mycanvas", width, height);
 	};
 	setupSocket = function(containerName) {
-		var firstRun, websocket, _struct;
+		var firstRun, websocket, conn, _struct;
 		firstRun = true;
 		websocket = go$global.WebSocket;
 		if (!(go$interfaceIsEqual(websocket, null))) {
@@ -3682,30 +3715,10 @@ go$packages["main"] = (function() {
 				appendLog((_struct = jQuery(new (go$sliceType(go$emptyInterface))([new Go$String("<div><b>Connection closed.</b></div>")])), new jquery.JQuery.Ptr(_struct.o, _struct.Jquery, _struct.Selector, _struct.Length, _struct.Context)));
 			}), (go$funcType([js.Object], [], false)));
 			conn.onmessage = go$externalize((function(evt) {
-				var sizeString, sizes, width, height, err, _tuple, _slice, _index, _tuple$1, _slice$1, _index$1, uri;
+				var sizeString, uri;
 				if (firstRun) {
-					console.log("adding canvas");
 					sizeString = strings.TrimSpace(go$internalize(evt.data, Go$String));
-					console.log("sizestring:", sizeString);
-					sizes = strings.Split(sizeString, ",");
-					if (sizes.length === 2) {
-						width = 0;
-						height = 0;
-						err = null;
-						_tuple = strconv.Atoi((_slice = sizes, _index = 0, (_index >= 0 && _index < _slice.length) ? _slice.array[_slice.offset + _index] : go$throwRuntimeError("index out of range"))), width = _tuple[0], err = _tuple[1];
-						if (!(go$interfaceIsEqual(err, null))) {
-							width = 600;
-						}
-						_tuple$1 = strconv.Atoi((_slice$1 = sizes, _index$1 = 1, (_index$1 >= 0 && _index$1 < _slice$1.length) ? _slice$1.array[_slice$1.offset + _index$1] : go$throwRuntimeError("index out of range"))), height = _tuple$1[0], err = _tuple$1[1];
-						if (!(go$interfaceIsEqual(err, null))) {
-							height = 400;
-						}
-						console.log("addCanvas:", width, ":", height);
-						addCanvas(containerName, "mycanvas", width, height);
-					} else {
-						console.log("addCanvas: defaults");
-						addCanvas(containerName, "mycanvas", 600, 400);
-					}
+					setupCanvas(containerName, sizeString);
 					firstRun = false;
 				} else {
 					uri = go$internalize(evt.data, Go$String);
@@ -3730,13 +3743,15 @@ go$packages["main"] = (function() {
 		go$global.saveImage = go$externalize(saveImage, (go$funcType([Go$String, Go$String], [], false)));
 	};
 	go$pkg.init = function() {
-		conn = null;
+		Image.methods = [["Bool", "", [], [Go$Bool], false, 0], ["Call", "", [Go$String, (go$sliceType(go$emptyInterface))], [js.Object], true, 0], ["Float", "", [], [Go$Float64], false, 0], ["Get", "", [Go$String], [js.Object], false, 0], ["Index", "", [Go$Int], [js.Object], false, 0], ["Int", "", [], [Go$Int], false, 0], ["Interface", "", [], [go$emptyInterface], false, 0], ["Invoke", "", [(go$sliceType(go$emptyInterface))], [js.Object], true, 0], ["IsNull", "", [], [Go$Bool], false, 0], ["IsUndefined", "", [], [Go$Bool], false, 0], ["Length", "", [], [Go$Int], false, 0], ["New", "", [(go$sliceType(go$emptyInterface))], [js.Object], true, 0], ["Set", "", [Go$String, go$emptyInterface], [], false, 0], ["SetIndex", "", [Go$Int, go$emptyInterface], [], false, 0], ["String", "", [], [Go$String], false, 0]];
+		(go$ptrType(Image)).methods = [["Bool", "", [], [Go$Bool], false, 0], ["Call", "", [Go$String, (go$sliceType(go$emptyInterface))], [js.Object], true, 0], ["Float", "", [], [Go$Float64], false, 0], ["Get", "", [Go$String], [js.Object], false, 0], ["Index", "", [Go$Int], [js.Object], false, 0], ["Int", "", [], [Go$Int], false, 0], ["Interface", "", [], [go$emptyInterface], false, 0], ["Invoke", "", [(go$sliceType(go$emptyInterface))], [js.Object], true, 0], ["IsNull", "", [], [Go$Bool], false, 0], ["IsUndefined", "", [], [Go$Bool], false, 0], ["Length", "", [], [Go$Int], false, 0], ["New", "", [(go$sliceType(go$emptyInterface))], [js.Object], true, 0], ["Set", "", [Go$String, go$emptyInterface], [], false, 0], ["SetIndex", "", [Go$Int, go$emptyInterface], [], false, 0], ["String", "", [], [Go$String], false, 0], ["addEventListener", "main", [Go$String, Go$Bool, (go$funcType([], [], false))], [], false, -1]];
+		Image.init([["Object", "", "", js.Object, ""]]);
 		jQuery = jquery.NewJQuery;
 	}
 	return go$pkg;
 })();
 go$error.implementedBy = [go$packages["errors"].errorString.Ptr, go$packages["github.com/gopherjs/gopherjs/js"].Error.Ptr, go$packages["runtime"].TypeAssertionError.Ptr, go$packages["runtime"].errorString, go$packages["strconv"].NumError.Ptr, go$ptrType(go$packages["runtime"].errorString)];
-go$packages["github.com/gopherjs/gopherjs/js"].Object.implementedBy = [go$packages["github.com/gopherjs/gopherjs/js"].Error, go$packages["github.com/gopherjs/gopherjs/js"].Error.Ptr, go$packages["github.com/gopherjs/jquery"].Event, go$packages["github.com/gopherjs/jquery"].Event.Ptr];
+go$packages["github.com/gopherjs/gopherjs/js"].Object.implementedBy = [go$packages["github.com/gopherjs/gopherjs/js"].Error, go$packages["github.com/gopherjs/gopherjs/js"].Error.Ptr, go$packages["github.com/gopherjs/jquery"].Event, go$packages["github.com/gopherjs/jquery"].Event.Ptr, go$packages["main"].Image, go$packages["main"].Image.Ptr];
 go$packages["runtime"].init();
 go$packages["github.com/gopherjs/gopherjs/js"].init();
 go$packages["github.com/gopherjs/jquery"].init();
