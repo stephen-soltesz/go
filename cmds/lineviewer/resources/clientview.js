@@ -3638,7 +3638,7 @@ go$packages["strings"] = (function() {
 	return go$pkg;
 })();
 go$packages["main"] = (function() {
-	var go$pkg = {}, js = go$packages["github.com/gopherjs/gopherjs/js"], jquery = go$packages["github.com/gopherjs/jquery"], strconv = go$packages["strconv"], strings = go$packages["strings"], Image, appendLog, newImage, addCanvas, updateCanvas, setupCanvas, setupSocket, saveImage, main, jQuery;
+	var go$pkg = {}, js = go$packages["github.com/gopherjs/gopherjs/js"], jquery = go$packages["github.com/gopherjs/jquery"], strconv = go$packages["strconv"], strings = go$packages["strings"], Image, appendLog, newImage, addCanvas, updateCanvas, setupCanvas, newWebSocket, wsOnClose, wsOnMessage, setupSocket, saveImage, main, jQuery, document, firstRun;
 	Image = go$pkg.Image = go$newType(0, "Struct", "main.Image", "Image", "main", function(Object_) {
 		this.go$val = this;
 		this.Object = Object_ !== undefined ? Object_ : null;
@@ -3658,7 +3658,7 @@ go$packages["main"] = (function() {
 	};
 	newImage = function(src) {
 		var img;
-		img = new go$global.Image();
+		img = document.createElement(go$externalize("img", Go$String));
 		img.src = go$externalize(src, Go$String);
 		return new Image.Ptr(img);
 	};
@@ -3669,8 +3669,7 @@ go$packages["main"] = (function() {
 	};
 	Image.prototype.addEventListener = function(event, capture, callback) { return this.go$val.addEventListener(event, capture, callback); };
 	addCanvas = function(containerName, canvasName, width, height) {
-		var document, canvas;
-		document = go$global.document;
+		var canvas;
 		canvas = document.createElement(go$externalize("canvas", Go$String));
 		canvas.id = go$externalize(canvasName, Go$String);
 		canvas.width = width;
@@ -3704,30 +3703,40 @@ go$packages["main"] = (function() {
 		}
 		addCanvas(containerName, "mycanvas", width, height);
 	};
-	setupSocket = function(containerName) {
-		var firstRun, websocket, conn, _struct;
-		firstRun = true;
+	newWebSocket = function(url) {
+		var websocket;
 		websocket = go$global.WebSocket;
 		if (!(go$interfaceIsEqual(websocket, null))) {
-			conn = new websocket(go$externalize("ws://{{$}}/ws", Go$String));
-			conn.onclose = go$externalize((function(evt) {
-				var _struct;
-				appendLog((_struct = jQuery(new (go$sliceType(go$emptyInterface))([new Go$String("<div><b>Connection closed.</b></div>")])), new jquery.JQuery.Ptr(_struct.o, _struct.Jquery, _struct.Selector, _struct.Length, _struct.Context)));
-			}), (go$funcType([js.Object], [], false)));
-			conn.onmessage = go$externalize((function(evt) {
-				var sizeString, uri;
-				if (firstRun) {
-					sizeString = strings.TrimSpace(go$internalize(evt.data, Go$String));
-					setupCanvas(containerName, sizeString);
-					firstRun = false;
-				} else {
-					uri = go$internalize(evt.data, Go$String);
-					updateCanvas("#mycanvas", uri);
-				}
-			}), (go$funcType([js.Object], [], false)));
-		} else {
-			appendLog((_struct = jQuery(new (go$sliceType(go$emptyInterface))([new Go$String("<div><b>Your browser does not support WebSockets.</b></div>")])), new jquery.JQuery.Ptr(_struct.o, _struct.Jquery, _struct.Selector, _struct.Length, _struct.Context)));
+			return new websocket(go$externalize(url, Go$String));
 		}
+		return null;
+	};
+	wsOnClose = function(evt) {
+		var _struct;
+		appendLog((_struct = jQuery(new (go$sliceType(go$emptyInterface))([new Go$String("<div><b>Connection closed.</b></div>")])), new jquery.JQuery.Ptr(_struct.o, _struct.Jquery, _struct.Selector, _struct.Length, _struct.Context)));
+	};
+	wsOnMessage = function(containerName, evt) {
+		var sizeString, uri;
+		if (firstRun) {
+			sizeString = strings.TrimSpace(go$internalize(evt.data, Go$String));
+			setupCanvas(containerName, sizeString);
+			firstRun = false;
+		} else {
+			uri = go$internalize(evt.data, Go$String);
+			updateCanvas("#mycanvas", uri);
+		}
+	};
+	setupSocket = function(socketUrl, containerName) {
+		var conn, _struct;
+		conn = newWebSocket(socketUrl);
+		if (go$interfaceIsEqual(conn, null)) {
+			appendLog((_struct = jQuery(new (go$sliceType(go$emptyInterface))([new Go$String("<div><b>Your browser does not support WebSockets.</b></div>")])), new jquery.JQuery.Ptr(_struct.o, _struct.Jquery, _struct.Selector, _struct.Length, _struct.Context)));
+			return;
+		}
+		conn.onclose = go$externalize(wsOnClose, (go$funcType([js.Object], [], false)));
+		conn.onmessage = go$externalize((function(evt) {
+			wsOnMessage(containerName, evt);
+		}), (go$funcType([js.Object], [], false)));
 	};
 	saveImage = function(canvasName, linkName) {
 		var url;
@@ -3736,7 +3745,7 @@ go$packages["main"] = (function() {
 		jQuery(new (go$sliceType(go$emptyInterface))([new Go$String(linkName)])).Get(new (go$sliceType(go$emptyInterface))([new Go$Int(0)])).href = url;
 	};
 	main = go$pkg.main = function() {
-		go$global.setupSocket = go$externalize(setupSocket, (go$funcType([Go$String], [], false)));
+		go$global.setupSocket = go$externalize(setupSocket, (go$funcType([Go$String, Go$String], [], false)));
 		go$global.addCanvas = go$externalize(addCanvas, (go$funcType([Go$String, Go$String, Go$Int, Go$Int], [], false)));
 		go$global.updateCanvas = go$externalize(updateCanvas, (go$funcType([Go$String, Go$String], [], false)));
 		go$global.appendLog = go$externalize(appendLog, (go$funcType([jquery.JQuery], [], false)));
@@ -3747,6 +3756,8 @@ go$packages["main"] = (function() {
 		(go$ptrType(Image)).methods = [["Bool", "", [], [Go$Bool], false, 0], ["Call", "", [Go$String, (go$sliceType(go$emptyInterface))], [js.Object], true, 0], ["Float", "", [], [Go$Float64], false, 0], ["Get", "", [Go$String], [js.Object], false, 0], ["Index", "", [Go$Int], [js.Object], false, 0], ["Int", "", [], [Go$Int], false, 0], ["Interface", "", [], [go$emptyInterface], false, 0], ["Invoke", "", [(go$sliceType(go$emptyInterface))], [js.Object], true, 0], ["IsNull", "", [], [Go$Bool], false, 0], ["IsUndefined", "", [], [Go$Bool], false, 0], ["Length", "", [], [Go$Int], false, 0], ["New", "", [(go$sliceType(go$emptyInterface))], [js.Object], true, 0], ["Set", "", [Go$String, go$emptyInterface], [], false, 0], ["SetIndex", "", [Go$Int, go$emptyInterface], [], false, 0], ["String", "", [], [Go$String], false, 0], ["addEventListener", "main", [Go$String, Go$Bool, (go$funcType([], [], false))], [], false, -1]];
 		Image.init([["Object", "", "", js.Object, ""]]);
 		jQuery = jquery.NewJQuery;
+		document = go$global.document;
+		firstRun = true;
 	}
 	return go$pkg;
 })();
