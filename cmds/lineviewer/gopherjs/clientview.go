@@ -1,13 +1,16 @@
 package main
 
 import (
-	"github.com/gopherjs/gopherjs/js"
-	"github.com/gopherjs/jquery"
 	"strconv"
 	"strings"
+
+	// third-party
+	"github.com/gopherjs/gopherjs/js"
+	"github.com/gopherjs/jquery"
 )
 
 var jQuery = jquery.NewJQuery
+var document = js.Global.Get("document")
 
 func appendLog(msg jquery.JQuery) {
 	var log = jQuery("#log")
@@ -16,9 +19,9 @@ func appendLog(msg jquery.JQuery) {
 	scrollTop := d.Get("scrollTop").Int()
 	scrollHeight := d.Get("scrollHeight").Int()
 	clientHeight := d.Get("clientHeight").Int()
-	doScroll := (scrollTop < scrollHeight-clientHeight)
+	doScroll := (scrollTop < scrollHeight - clientHeight)
 	if doScroll {
-		d.Set("scrollTop", scrollHeight-clientHeight)
+		d.Set("scrollTop", scrollHeight - clientHeight)
 	}
 }
 
@@ -27,7 +30,7 @@ type Image struct {
 }
 
 func newImage(src string) *Image {
-	img := js.Global.Get("Image").New()
+	img := document.Call("createElement", "img")
 	img.Set("src", src)
 	return &Image{img}
 }
@@ -37,7 +40,6 @@ func (img *Image) addEventListener(event string, capture bool, callback func()) 
 }
 
 func addCanvas(containerName, canvasName string, width, height int) {
-	document := js.Global.Get("document")
 	canvas := document.Call("createElement", "canvas")
 	canvas.Set("id", canvasName)
 	canvas.Set("width", width)
@@ -72,30 +74,44 @@ func setupCanvas(containerName, sizeString string) {
 	addCanvas(containerName, "mycanvas", width, height)
 }
 
-func setupSocket(containerName string) {
-	var firstRun = true
-
+func newWebSocket(url string) js.Object {
 	websocket := js.Global.Get("WebSocket")
 	if websocket != nil {
-		conn := websocket.New("ws://{{$}}/ws")
-		conn.Set("onclose", func(evt js.Object) {
-			appendLog(jQuery("<div><b>Connection closed.</b></div>"))
-		})
-		conn.Set("onmessage", func(evt js.Object) {
-			if firstRun {
-				sizeString := strings.TrimSpace(evt.Get("data").String())
-				setupCanvas(containerName, sizeString)
-				firstRun = false
-			} else {
-				uri := evt.Get("data").String()
-				updateCanvas("#mycanvas", uri)
-			}
-		})
+		return websocket.New(url)
+	}
+	return nil
+}
+
+func wsOnClose(evt js.Object) {
+		appendLog(jQuery("<div><b>Connection closed.</b></div>"))
+}
+
+var firstRun = true
+func wsOnMessage(containerName string, evt js.Object) {
+	if firstRun {
+		sizeString := strings.TrimSpace(evt.Get("data").String())
+		setupCanvas(containerName, sizeString)
+		firstRun = false
 	} else {
-		appendLog(jQuery("<div><b>Your browser does not support WebSockets.</b></div>"))
+		uri := evt.Get("data").String()
+		updateCanvas("#mycanvas", uri)
 	}
 }
 
+// opens a websocket to socketUrl and adds a canvas to containerName
+func setupSocket(socketUrl, containerName string) {
+	conn := newWebSocket(socketUrl)
+	if conn == nil {
+		appendLog(jQuery("<div><b>Your browser does not support WebSockets.</b></div>"))
+		return
+	}
+	conn.Set("onclose", wsOnClose)
+	conn.Set("onmessage", func(evt js.Object) {
+		wsOnMessage(containerName, evt)
+	})
+}
+
+// converts the canvas to an octet-stream downloadable image.
 func saveImage(canvasName, linkName string) {
 	url := jQuery(canvasName).Get(0).Call("toDataURL", "image/png")
 	url = url.Call("replace", "image/png", "image/octet-stream")
@@ -103,6 +119,7 @@ func saveImage(canvasName, linkName string) {
 }
 
 func main() {
+	// export function names globally.
 	js.Global.Set("setupSocket", setupSocket)
 	js.Global.Set("addCanvas", addCanvas)
 	js.Global.Set("updateCanvas", updateCanvas)
