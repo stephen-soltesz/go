@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
+	//"os"
 	//"math/rand"
 	"github.com/stephen-soltesz/go/collection"
 	"github.com/stephen-soltesz/go/lineserver"
@@ -17,6 +17,7 @@ import (
 
 var configPattern = regexp.MustCompile("axis|reset|exit|color|label")
 var configError = errors.New("Matches configPattern")
+var exitEarly = false
 
 type CollectorClient struct {
 	reader    *bufio.ReadWriter
@@ -39,6 +40,8 @@ func startCollectorServer(host string, port int, collector *collection.Collectio
 			// TODO: what other errors can be handled here?
 			debugLogger.Println(err)
 			panic(err)
+		} else if exitEarly {
+			break
 		}
 		client := CollectorClient{}
 		client.reader = reader
@@ -63,7 +66,10 @@ func (client *CollectorClient) readSettings(val string) {
 	if len(fields) == 1 {
 		// single command
 		if fields[0] == "EXIT" {
-			os.Exit(0)
+			fmt.Println("Got EXIT signal")
+			exitEarly = true
+			return
+			//os.Exit(0)
 		} else if fields[0] == "RESET" {
 			fmt.Println("NOT YET SUPPORTED")
 		} else {
