@@ -29,6 +29,8 @@ type Figure struct {
 	fontName string
 }
 
+var fontCache map[string]*truetype.Font
+
 type Chart struct {
 	chart.ScatterChart
 }
@@ -55,14 +57,26 @@ func autoStyle(s int) func() Style {
 var NextStyle = autoStyle(0)
 
 func loadFont(fontfile string) *truetype.Font {
-	// Read the font data.
-	data, err := Asset("res/" + fontfile)
-	if err != nil {
-		return nil
+	var font *truetype.Font
+	var ok bool
+	var err error
+	var data []byte
+
+	// Read the font data once.
+	if fontCache == nil {
+		fontCache = make(map[string]*truetype.Font)
 	}
-	font, err := freetype.ParseFont(data)
-	if err != nil {
-		return nil
+	fontpath := "res/" + fontfile
+	if font, ok = fontCache[fontpath]; !ok {
+		data, err = Asset(fontpath)
+		if err != nil {
+			return nil
+		}
+		font, err = freetype.ParseFont(data)
+		if err != nil {
+			return nil
+		}
+		fontCache[fontpath] = font
 	}
 	return font
 }
