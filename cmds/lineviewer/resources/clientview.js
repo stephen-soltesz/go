@@ -3638,7 +3638,7 @@ go$packages["strings"] = (function() {
 	return go$pkg;
 })();
 go$packages["main"] = (function() {
-	var go$pkg = {}, js = go$packages["github.com/gopherjs/gopherjs/js"], jquery = go$packages["github.com/gopherjs/jquery"], strconv = go$packages["strconv"], strings = go$packages["strings"], Image, appendLog, newImage, addCanvas, updateCanvas, setupCanvas, newWebSocket, wsOnClose, wsOnMessage, setupSocket, saveImage, main, jQuery, document, firstRun;
+	var go$pkg = {}, strconv = go$packages["strconv"], strings = go$packages["strings"], js = go$packages["github.com/gopherjs/gopherjs/js"], jquery = go$packages["github.com/gopherjs/jquery"], Image, appendLog, newImage, addCanvas, updateCanvas, setupCanvas, newWebSocket, wsOnClose, wsOnMessage, setupSocket, saveImage, main, jQuery, document, firstRun;
 	Image = go$pkg.Image = go$newType(0, "Struct", "main.Image", "Image", "main", function(Object_) {
 		this.go$val = this;
 		this.Object = Object_ !== undefined ? Object_ : null;
