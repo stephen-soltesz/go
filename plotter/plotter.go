@@ -16,14 +16,14 @@ import (
 	// third-party
 	"code.google.com/p/freetype-go/freetype"
 	"code.google.com/p/freetype-go/freetype/truetype"
-	"github.com/vdobler/chart"
-	"github.com/vdobler/chart/imgg"
-	"github.com/vdobler/chart/svgg"
-	//"github.com/stephen-soltesz/chart"
-	//"github.com/stephen-soltesz/chart/imgg"
+	//"github.com/vdobler/chart"
+	//"github.com/vdobler/chart/imgg"
+	//"github.com/vdobler/chart/svgg"
+	"github.com/stephen-soltesz/chart"
+	"github.com/stephen-soltesz/chart/imgg"
+	"github.com/stephen-soltesz/chart/svgg"
 
 	"github.com/ajstarks/svgo"
-	//"github.com/stephen-soltesz/chart/svgg"
 )
 
 type Style chart.Style

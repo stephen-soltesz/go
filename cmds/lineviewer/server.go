@@ -23,7 +23,6 @@ import (
 	"runtime/pprof"
 
 	"github.com/stephen-soltesz/go/collection"
-	//"github.com/vdobler/chart"
 	"github.com/stephen-soltesz/chart"
 )
 
