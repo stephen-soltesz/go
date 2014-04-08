@@ -202,5 +202,5 @@ func (c *Collection) Plot(writer io.Writer, width, height int, usetime bool) err
 		}
 	}
 
-	return fig.Render(writer, width, height)
+	return fig.RenderSVG(writer, width, height)
 }
