@@ -16,10 +16,14 @@ import (
 	// third-party
 	"code.google.com/p/freetype-go/freetype"
 	"code.google.com/p/freetype-go/freetype/truetype"
-	//"github.com/vdobler/chart"
-	//"github.com/vdobler/chart/imgg"
-	"github.com/stephen-soltesz/chart"
-	"github.com/stephen-soltesz/chart/imgg"
+	"github.com/vdobler/chart"
+	"github.com/vdobler/chart/imgg"
+	"github.com/vdobler/chart/svgg"
+	//"github.com/stephen-soltesz/chart"
+	//"github.com/stephen-soltesz/chart/imgg"
+
+	"github.com/ajstarks/svgo"
+	//"github.com/stephen-soltesz/chart/svgg"
 )
 
 type Style chart.Style
@@ -112,6 +116,23 @@ func (f *Figure) RenderFile(filename string, width, height int) error {
 	return nil
 }
 
+func (f *Figure) RenderSVG(writer io.Writer, width, height int) error {
+	whiteBG := color.RGBA{0xee, 0xee, 0xee, 0xff}
+	count := len(f.Charts)
+
+	svgdata := svg.New(writer)
+	svgdata.Start(width+10, height+10)
+	svgdata.Rect(0, 0, width, height, "fill: #ffffff")
+
+	for i, ax := range f.Charts {
+		igr := svgg.AddTo(svgdata, 0, i*(height/count), width, (height / count), "", 12, whiteBG)
+		ax.Plot(igr)
+	}
+
+	svgdata.End()
+	return nil
+}
+
 func (f *Figure) Render(writer io.Writer, width, height int) error {
 	whiteBG := color.RGBA{0xee, 0xee, 0xee, 0xff}
 	image := image.NewRGBA(image.Rect(0, 0, width, height))
@@ -153,14 +174,14 @@ func (f *Figure) AddChart(title, xlabel, ylabel string, xmin, xmax float64, uset
 	//                    FillColor: color.NRGBA{0xf8, 0xf8, 0xf8, 0xff},
 	//                    Font: chart.Font{Size: chart.NormalFontSize}}
 
-	sGrid := chart.Style{LineStyle: chart.DottedLine, LineColor: color.Gray{0xcc}}
-	sZero := chart.Style{LineStyle: chart.DottedLine, LineColor: color.Gray{0xcc}}
-	sMajor := chart.Style{LineColor: color.Gray{0x88}, Font: fSmall}
-	sTic := chart.Style{LineColor: color.Gray{0x88}, Font: fSmall}
-	sRange := chart.Style{Font: fSmall}
+	sGrid := chart.Style{LineStyle: chart.DashedLine, LineColor: color.Gray{0xbb}, LineWidth: 1}
+	sZero := chart.Style{LineStyle: chart.DashedLine, LineColor: color.Gray{0xbb}}
+	sMajor := chart.Style{LineColor: color.Gray{0x88}, Font: fSmall, LineWidth: 1}
+	sTic := chart.Style{LineColor: color.Gray{0x88}, Font: fSmall, LineWidth: 1}
+	sRange := chart.Style{Font: fSmall, LineWidth: 1}
 	//sBg := chart.Style{LineColor: color.NRGBA{0xff, 0xff, 0xee, 0x88},
 	//                   FillColor: color.NRGBA{0xff, 0xff, 0xee, 0x88}}
-	sTitle := chart.Style{Font: chart.Font{"Arial", chart.NormalFontSize, color.Gray{0x88}}}
+	sTitle := chart.Style{Font: chart.Font{"Arial", chart.NormalFontSize, color.Gray{0x88}}, LineWidth: 1}
 
 	axis.Options = chart.PlotOptions{chart.GridLineElement: sGrid,
 		//                                  chart.PlotBackgroundElement: sBg,
