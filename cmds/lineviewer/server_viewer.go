@@ -128,7 +128,9 @@ func pngToUri(data []byte) []byte {
 	var uridata bytes.Buffer
 
 	encoded := base64.StdEncoding.EncodeToString(data)
-	uridata.WriteString("data:image/png;base64,")
+	//data:image/svg+xml;charset=utf-8;base64,
+	//uridata.WriteString("data:image/png;base64,")
+	uridata.WriteString("data:image/svg+xml;charset=utf-8;base64,")
 	uridata.WriteString(encoded)
 
 	return uridata.Bytes()
