@@ -18,11 +18,17 @@ These are command-line options.
     -xlabel=                  X-Label for axis.
     -ylabel=                  Y-Label for axis.
     -label=                   Line label name on axis.
-    -color=                   Color of line. Chosen automatically by default.
+    -color=                   Color of line as "#ffffff". Chosen automatically by default.
     -q                        Silence the echo of values sent to the server.
-    -samples=                 Number of samples to use when calculating functions.
-    -avg=false                Whether to report the average of the number of samples.
-    -percentile=<pct>         Percentile to report over number of samples.
+    -exit                     Signal the lineviewer to exit. Useful when profiling the server.
+		-operation=<kind>,<samples>[,<percentile>]
+                              Perform an optional operation on collected samples 
+                              before sending to lineviewer.
+                              <kind> is one of "avg", "stdev", "perc".
+                              <samples> is an integer specifying the number of samples to operate over.
+                              <percentile> if kind=perc, then this is the percentile to
+                                 report from the last <samples> values.
+    -debug                    Print extra debug information.
 
 Examples
 
@@ -238,7 +244,7 @@ func (w *ValueWriter) sendClientSettings() error {
 	}
 
 	if *lineName != "" {
-		name = "label:" + name + *lineName + "\n"
+		name = "label:" + *lineName + "\n"
 	} else if *command != "" {
 		name = "label:" + name + *command + "\n"
 	} else {
