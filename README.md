@@ -22,11 +22,11 @@ connect to a single lineviewer server to plot multiple lines and axes.
 
 To recreate the generated sources, install these dependencies.
 
-GopherJS - translates syntacically correct go code to javascript.
+GopherJS - translate Go code to javascript.
 
     go get github.com/gopherjs/gopherjs
 
-go-bindata - converts binary assets into go code to be bundled with go binaries.
+go-bindata - convert binary assets to Go code to be bundled with Go binaries.
 
     go get github.com/jteeuwen/go-bindata
 
