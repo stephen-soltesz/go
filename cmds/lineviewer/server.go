@@ -6,11 +6,6 @@ clients connect and send data corresponding to data streams. The second port is
 a simple http server that allows multiple viewers of the collected data in
 real-time.
 
-Style options.
-
-    axis:axisname:axis_xlabel:axis_ylabel
-    label:linename
-    color:name
 */
 package main
 
@@ -27,7 +22,7 @@ import (
 )
 
 var (
-	bindAddress   = flag.String("hostname", "localhost", "Interface to bind to.")
+	bindAddress   = flag.String("hostname", "0.0.0.0", "Interface to bind to.")
 	viewerPort    = flag.Int("viewer_port", 8080, "Port for web viewer.")
 	collectorPort = flag.Int("collector_port", 3131, "Port for data collector.")
 	timestamp     = flag.Bool("timestamp", false, "Use timestamps as x-axis.")
