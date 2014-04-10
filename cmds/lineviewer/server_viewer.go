@@ -142,6 +142,11 @@ func getPngUri() []byte {
 	if err := collector.Plot(&pngimg, *plotWidth, *plotHeight, *timestamp); err != nil {
 		return nil
 	}
+	if *debug {
+		// save the current image to a file.
+		fmt.Println("writing debug.svg")
+		ioutil.WriteFile("debug.svg", pngimg.Bytes(), 0644)
+	}
 	return pngToUri(pngimg.Bytes())
 }
 
