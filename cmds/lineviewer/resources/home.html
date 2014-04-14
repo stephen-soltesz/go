@@ -8,6 +8,12 @@
 	<script type="text/javascript">
 		$(function() {
 			setupSocket("ws://{{$}}/ws", "#container");
+			var repeatUpdate = function() {
+				var uri = "/svg?delta="+getXDelta(true);
+				updateCanvas("#mycanvas", uri);
+				setTimeout(repeatUpdate, getUpdateInterval());
+			};
+			setTimeout(repeatUpdate, getUpdateInterval());
 		});
 	</script>
 </head>
