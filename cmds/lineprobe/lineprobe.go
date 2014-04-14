@@ -67,6 +67,8 @@ var (
 	axisName    = flag.String("axis", "default", "Name of axis to associate this line.")
 	xlabelName  = flag.String("xlabel", "", "X-Label for axis.")
 	ylabelName  = flag.String("ylabel", "", "Y-Label for axis.")
+	ylimitValue = flag.String("ylimit", "", "Y-limits for axis 'ymin:ymax'.")
+	yaxisScale  = flag.Bool("ylog", false, "Y-axis should be log scale.")
 	lineName    = flag.String("label", "", "Line label name on axis.")
 	lineColor   = flag.String("color", "", "Color of line. Chosen automatically by default.")
 	quietOutput = flag.Bool("q", false, "Whether to echo values sent to server.")
@@ -220,6 +222,7 @@ func (w *ValueWriter) SendValue(val float64) error {
 }
 
 func (w *ValueWriter) sendClientSettings() error {
+	var err error
 	if *exitServer {
 		fmt.Println("Sending exit")
 		_, err := w.writer.WriteString("EXIT\n")
@@ -233,9 +236,22 @@ func (w *ValueWriter) sendClientSettings() error {
 		os.Exit(0)
 	}
 	axisSetting := "axis:" + *axisName + ":" + *xlabelName + ":" + *ylabelName + "\n"
-	_, err := w.writer.WriteString(axisSetting)
-	if err != nil {
+	if _, err = w.writer.WriteString(axisSetting); err != nil {
 		return err
+	}
+
+	if *ylimitValue != "" {
+		limitSetting := "limit:" + *ylimitValue + "\n"
+		if _, err := w.writer.WriteString(limitSetting); err != nil {
+			return err
+		}
+	}
+
+	if *yaxisScale {
+		yaxisScale := "yaxisscale:log\n"
+		if _, err := w.writer.WriteString(yaxisScale); err != nil {
+			return err
+		}
 	}
 
 	name := ""
@@ -251,15 +267,13 @@ func (w *ValueWriter) sendClientSettings() error {
 		name = "label:" + name + fmt.Sprintf("Thread-%d\n", os.Getpid())
 	}
 
-	_, err = w.writer.WriteString(name)
-	if err != nil {
+	if _, err = w.writer.WriteString(name); err != nil {
 		return err
 	}
 
 	if *lineColor != "" {
 		colorSetting := fmt.Sprintf("color:%s\n", *lineColor)
-		_, err := w.writer.WriteString(colorSetting)
-		if err != nil {
+		if _, err := w.writer.WriteString(colorSetting); err != nil {
 			return err
 		}
 	}
