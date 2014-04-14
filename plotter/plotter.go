@@ -31,6 +31,7 @@ type Style chart.Style
 type Figure struct {
 	Charts   []*Chart
 	fontName string
+	usetime  bool
 }
 
 var fontCache map[string]*truetype.Font
@@ -85,9 +86,10 @@ func loadFont(fontfile string) *truetype.Font {
 	return font
 }
 
-func NewFigure() *Figure {
+func NewFigure(usetime bool) *Figure {
 	f := Figure{}
 	f.fontName = "FreeSans.ttf"
+	f.usetime = usetime
 	return &f
 }
 
@@ -147,7 +149,7 @@ func (f *Figure) Render(writer io.Writer, width, height int) error {
 	return png.Encode(writer, image)
 }
 
-func (f *Figure) AddChart(title, xlabel, ylabel string, xmin, xmax float64, usetime bool) *Chart {
+func (f *Figure) AddChart(title, xlabel, ylabel string, xmin, xmax float64) *Chart {
 	axis := Chart{chart.ScatterChart{}}
 
 	axis.Title = title
@@ -158,41 +160,49 @@ func (f *Figure) AddChart(title, xlabel, ylabel string, xmin, xmax float64, uset
 	axis.YRange.TicSetting.Mirror = chart.MirrorAxisOnly
 	axis.XRange.TicSetting.Grid = chart.GridLines
 	axis.YRange.TicSetting.Grid = chart.GridLines
-	axis.XRange.Time = usetime
-	if usetime {
+	axis.XRange.Time = f.usetime
+	if f.usetime {
 		axis.XRange.TFixed(time.Unix(int64(xmin), 0), time.Unix(int64(xmax), 0), nil)
-		// TODO make configurable
-		//axis.YRange.Log = true
 	} else {
 		axis.XRange.Fixed(xmin, xmax, 0)
 	}
 	axis.XRange.Init()
 
-	fSmall := chart.Font{Size: chart.NormalFontSize}
-	//sKey := chart.Style{LineColor: color.NRGBA{0x0f, 0x0f, 0x0f, 0xff},
-	//                    LineStyle: chart.SolidLine, LineWidth: 1,
-	//                    FillColor: color.NRGBA{0xf8, 0xf8, 0xf8, 0xff},
-	//                    Font: chart.Font{Size: chart.NormalFontSize}}
+	fSmall := chart.Font{Size: chart.SmallFontSize}
+	fNormal := chart.Font{Size: chart.NormalFontSize}
+	sKey := chart.Style{LineColor: color.Gray{0x88},
+	                    LineStyle: chart.SolidLine,
+											LineWidth: 1,
+	                    FillColor: color.NRGBA{0xf8, 0xf8, 0xf8, 0x66},
+	                    Font: fSmall}
+	sGrid := chart.Style{LineStyle: chart.DashedLine,
+											 LineColor: color.Gray{0xbb},
+											 LineWidth: 1}
+	sZero := chart.Style{LineStyle: chart.DashedLine,
+											 LineColor: color.Gray{0xbb}}
+	sMajor := chart.Style{LineColor: color.Gray{0x88},
+												LineWidth: 1,
+												Font: fNormal}
+	sTic := chart.Style{LineWidth: 1,
+											LineColor: color.Gray{0x88},
+											Font: fNormal}
+	sRange := chart.Style{LineWidth: 1, Font: fNormal}
+	sTitle := chart.Style{LineWidth: 1, Font: fNormal}
 
-	sGrid := chart.Style{LineStyle: chart.DashedLine, LineColor: color.Gray{0xbb}, LineWidth: 1}
-	sZero := chart.Style{LineStyle: chart.DashedLine, LineColor: color.Gray{0xbb}}
-	sMajor := chart.Style{LineColor: color.Gray{0x88}, Font: fSmall, LineWidth: 1}
-	sTic := chart.Style{LineColor: color.Gray{0x88}, Font: fSmall, LineWidth: 1}
-	sRange := chart.Style{Font: fSmall, LineWidth: 1}
 	//sBg := chart.Style{LineColor: color.NRGBA{0xff, 0xff, 0xee, 0x88},
 	//                   FillColor: color.NRGBA{0xff, 0xff, 0xee, 0x88}}
-	sTitle := chart.Style{Font: chart.Font{"Arial", chart.NormalFontSize, color.Gray{0x88}}, LineWidth: 1}
+	//                   chart.PlotBackgroundElement: sBg,
 
-	axis.Options = chart.PlotOptions{chart.GridLineElement: sGrid,
-		//                                  chart.PlotBackgroundElement: sBg,
-		chart.ZeroAxisElement:  sZero,
-		chart.MajorAxisElement: sMajor,
-		chart.MinorAxisElement: sMajor,
-		chart.MajorTicElement:  sTic,
-		chart.MinorTicElement:  sTic,
-		//chart.KeyElement: sKey,
-		chart.RangeLimitElement: sRange,
-		chart.TitleElement:      sTitle}
+	axis.Options = chart.PlotOptions{
+			chart.GridLineElement:	 sGrid,
+			chart.ZeroAxisElement:   sZero,
+			chart.MajorAxisElement:  sMajor,
+			chart.MinorAxisElement:  sMajor,
+			chart.MajorTicElement:   sTic,
+			chart.MinorTicElement:   sTic,
+			chart.KeyElement:				 sKey,
+			chart.RangeLimitElement: sRange,
+			chart.TitleElement:      sTitle}
 	axis.Key.Cols = 1
 	axis.Key.Pos = "itl"
 
