@@ -27,7 +27,7 @@ type CollectorClient struct {
 	id        int
 }
 
-func startCollectorServer(host string, port int, collector *collection.Collection) {
+func startCollectorServer(host string, port int) {
 	addr := fmt.Sprintf("%s:%d", host, port)
 	serv := lineserver.NewServer(addr)
 	client_count := 0
@@ -45,7 +45,7 @@ func startCollectorServer(host string, port int, collector *collection.Collectio
 		}
 		client := CollectorClient{}
 		client.reader = reader
-		client.collector = collector
+		client.collector = collection.Default()
 		client.id = client_count
 		go handleClient(&client)
 	}
@@ -94,6 +94,20 @@ func (client *CollectorClient) readSettings(val string) {
 			if client.line != nil {
 				debugLogger.Print("CLIENT: color: ", fields[1])
 				client.line.SetColor(fields[1])
+			}
+		} else if fields[0] == "yaxisscale" {
+			if fields[1] == "log" {
+				client.axis.Uselog = true
+			}
+		} else if fields[0] == "limit" {
+			if len(fields) == 3 {
+				client.axis.Ylimit = true
+				if ymin, err := strconv.ParseFloat(strings.TrimSpace(fields[1]), 64); err == nil {
+					client.axis.Ymin = ymin
+				}
+				if ymax, err := strconv.ParseFloat(strings.TrimSpace(fields[2]), 64); err == nil {
+					client.axis.Ymax = ymax
+				}
 			}
 		}
 	}
