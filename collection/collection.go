@@ -31,8 +31,9 @@ var defaultCollection *Collection
 // A Collection is the root container.
 // Axes is a map, so that Axis objects can be referred to by name, see GetAxis().
 type Collection struct {
-	Title string
-	Axes  map[string]*Axis
+	Title   string
+	Axes    map[string]*Axis
+	Usetime bool
 }
 
 // A Collection contains one or more Axis objects.
@@ -41,6 +42,9 @@ type Axis struct {
 	XLabel string
 	YLabel string
 	Lines  map[string]*Line
+	Ylimit bool
+	Ymin, Ymax	 float64
+	Uselog  bool
 }
 
 // An Axis contains one or more Line objects.
@@ -101,7 +105,7 @@ func (c *Collection) GetAxis(name string) *Axis {
 }
 
 func (c *Collection) AddAxis(name, xlabel, ylabel string) *Axis {
-	axis := &Axis{name, xlabel, ylabel, make(map[string]*Line)}
+	axis := &Axis{name, xlabel, ylabel, make(map[string]*Line), false, 0, 0, false}
 	c.Axes[name] = axis
 	return axis
 }
@@ -182,19 +186,24 @@ func (ax *Axis) MaxX() float64 {
 }
 
 // TODO: add a 'Window' argument to specify the data view to plot.
-func (c *Collection) Plot(writer io.Writer, width, height int, usetime bool) error {
+func (c *Collection) Plot(writer io.Writer, width, height int, delta float64) error {
 
-	fig := plotter.NewFigure()
+	fig := plotter.NewFigure(c.Usetime)
 	for _, ax := range c.Axes {
 		xmax := 0.0
-		if usetime {
+		if c.Usetime {
 			// continuously update plot with most current time.
 			// TODO: make this an option.
-			xmax = float64(time.Now().Unix())
+			xmax = float64(time.Now().Unix())-delta
 		} else {
 			xmax = ax.MaxX()
 		}
-		chart := fig.AddChart(c.Title, ax.XLabel, ax.YLabel, xmax-240, xmax, usetime)
+		chart := fig.AddChart(c.Title, ax.XLabel, ax.YLabel, xmax-240, xmax)
+		chart.YRange.Log = ax.Uselog
+		if ax.Ylimit {
+			chart.YRange.Fixed(ax.Ymin, ax.Ymax, 0)
+			chart.YRange.Init()
+		}
 		for _, line := range ax.Lines {
 			if xc, _ := line.Count(); xc > 0 {
 				chart.AddData(line.Name, line.X, line.Y, line.Style)
