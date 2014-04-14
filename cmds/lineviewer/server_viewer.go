@@ -2,13 +2,16 @@ package main
 
 import (
 	"bytes"
-	"encoding/base64"
-	"errors"
+//  "encoding/base64"
+  "encoding/json"
+//  "errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -19,10 +22,12 @@ import (
 )
 
 func startViewServer(host string, port int) {
-	go hub.run()
+//	go hub.run()
 	addr := fmt.Sprintf("%s:%d", host, port)
 	http.HandleFunc("/", serveHome)
 	http.HandleFunc("/ws", serveWs)
+	http.HandleFunc("/svg", serveSvg)
+	http.HandleFunc("/config", serveConfig)
 	debugLogger.Printf("HTTP: listen on: %s\n", addr)
 	err := http.ListenAndServe(addr, nil)
 	if err != nil {
@@ -32,6 +37,7 @@ func startViewServer(host string, port int) {
 
 // hub maintains the set of active connections and broadcasts messages to the
 // connections.
+/*
 type hubset struct {
 	// Registered connections.
 	connections map[*connection]bool
@@ -73,6 +79,7 @@ func (h *hubset) run() {
 		}
 	}
 }
+*/
 
 const (
 	// Time allowed to write a message to the peer.
@@ -101,6 +108,7 @@ type connection struct {
 }
 
 // readPump pumps messages from the websocket connection to the hub.
+/*
 func (c *connection) readPump() {
 	defer func() {
 		hub.unregister <- c
@@ -117,6 +125,7 @@ func (c *connection) readPump() {
 		hub.broadcast <- message
 	}
 }
+*/
 
 // write writes a message with the given message type and payload.
 func (c *connection) write(mt int, payload []byte) error {
@@ -124,6 +133,34 @@ func (c *connection) write(mt int, payload []byte) error {
 	return c.ws.WriteMessage(mt, payload)
 }
 
+func getSvg(delta int64) []byte {
+	var img bytes.Buffer
+	collector := collection.Default()
+	if err := collector.Plot(&img, *plotWidth, *plotHeight, float64(delta)); err != nil {
+		return nil
+	}
+	return img.Bytes()
+}
+
+type Config struct {
+	Success bool `json:"success"`
+	Width   int	 `json:"width"`
+	Height  int  `json:"height"`
+}
+
+func serveConfig(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	cfg := &Config{Success: true, Width: *plotWidth, Height: *plotHeight}
+	msg, err := json.Marshal(cfg)
+	if err != nil {
+		http.Error(w, "Server Error", 500)
+		return
+	}
+	w.Write(msg)
+	return
+}
+
+/*
 func pngToUri(data []byte) []byte {
 	var uridata bytes.Buffer
 
@@ -139,13 +176,8 @@ func pngToUri(data []byte) []byte {
 func getPngUri() []byte {
 	var pngimg bytes.Buffer
 	collector := collection.Default()
-	if err := collector.Plot(&pngimg, *plotWidth, *plotHeight, *timestamp); err != nil {
+	if err := collector.Plot(&pngimg, *plotWidth, *plotHeight, 0); err != nil {
 		return nil
-	}
-	if *debug {
-		// save the current image to a file.
-		fmt.Println("writing debug.svg")
-		ioutil.WriteFile("debug.svg", pngimg.Bytes(), 0644)
 	}
 	return pngToUri(pngimg.Bytes())
 }
@@ -162,8 +194,10 @@ func (c *connection) genMessages() {
 		time.Sleep(time.Second)
 	}
 }
+*/
 
 // writePump pumps messages from the hub to the websocket connection.
+/*
 func (c *connection) writePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
@@ -187,6 +221,7 @@ func (c *connection) writePump() {
 		}
 	}
 }
+*/
 
 // serverWs handles webocket requests from the peer.
 func serveWs(w http.ResponseWriter, r *http.Request) {
@@ -209,14 +244,14 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	c := &connection{send: make(chan []byte, 256), ws: ws}
-	hub.register <- c
+	//hub.register <- c
 	debugLogger.Printf("ws:Starting read/write pumps %s\n", r.Host)
-	go c.writePump()
+	//go c.writePump()
 	// send canvas size as first message.
 	msgStr := fmt.Sprintf("%d,%d\n", *plotWidth, *plotHeight)
 	c.write(websocket.TextMessage, []byte(msgStr))
-	go c.genMessages()
-	c.readPump()
+	//go c.genMessages()
+	//c.readPump()
 }
 
 func splitAll(path string) (string, string, string) {
@@ -260,4 +295,46 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/css; charset=utf-8")
 	}
 	tmpl.Execute(w, r.Host)
+}
+
+func serveSvg(w http.ResponseWriter, r *http.Request) {
+	var err error
+	var delta int64
+
+	if r.Method != "GET" {
+		http.Error(w, "Method nod allowed", 405)
+		return
+	}
+	formVals, err := url.ParseQuery(r.URL.RawQuery)
+	if err != nil {
+		http.Error(w, "Bad Request", 400)
+		return
+	}
+
+	deltaStr, ok := formVals["delta"]
+	if !ok {
+		http.Error(w, "Bad Request. All parameters not provided.", 400)
+		return
+	}
+
+	if len(deltaStr) > 0 {
+		delta, err = strconv.ParseInt(deltaStr[0], 10, 64)
+		if err != nil {
+			http.Error(w, "Bad Request. Could not convert parameters.", 400)
+			return
+		}
+	} else {
+		delta = 0
+	}
+
+	svg := getSvg(delta)
+	if svg != nil {
+		if *debug {
+			// save the current image to a file.
+			fmt.Println("writing debug.svg")
+			ioutil.WriteFile("debug.svg", svg, 0644)
+		}
+		w.Header().Set("Content-Type", "image/svg+xml; charset=utf-8")
+		w.Write(svg)
+	}
 }
