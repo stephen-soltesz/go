@@ -3,6 +3,7 @@ package main
 import (
 	"strconv"
 	"strings"
+	"math"
 
 	// third-party
 	"github.com/gopherjs/gopherjs/js"
@@ -11,6 +12,12 @@ import (
 
 var jQuery = jquery.NewJQuery
 var document = js.Global.Get("document")
+var xDelta float64 = 0
+var updateInterval float64 = 1000
+
+func getUpdateInterval() float64 {
+	return updateInterval
+}
 
 func appendLog(msg jquery.JQuery) {
 	var log = jQuery("#log")
@@ -39,11 +46,41 @@ func (img *Image) addEventListener(event string, capture bool, callback func()) 
 	img.Call("addEventListener", event, callback, capture)
 }
 
+func getXDelta(inc bool) int64 {
+	if inc && xDelta < 0 {
+		xDelta += (updateInterval/1000.0) // 1.0
+	}
+	return int64(math.Floor(xDelta))
+}
+
 func addCanvas(containerName, canvasName string, width, height int) {
 	canvas := document.Call("createElement", "canvas")
 	canvas.Set("id", canvasName)
 	canvas.Set("width", width)
 	canvas.Set("height", height)
+
+	var mouseDown bool = false
+	var mousePrevPos js.Object = nil
+	document.Set("onmousedown", func(evt js.Object) {
+		mouseDown = true
+		mousePrevPos = nil
+		updateInterval = 200
+	})
+	document.Set("onmouseup", func(evt js.Object) {
+		mouseDown = false
+		updateInterval = 1000
+	})
+	document.Set("onmousemove", func(evt js.Object) {
+		if mouseDown {
+			// movement attributes are not supported universally.
+			if mousePrevPos != nil {
+				curr := evt.Get("clientX").Int()
+				prev := mousePrevPos.Get("clientX").Int()
+				xDelta += float64(curr - prev)
+			}
+			mousePrevPos = evt
+		}
+	})
 	jQuery(containerName).Prepend(canvas)
 }
 
@@ -74,6 +111,7 @@ func setupCanvas(containerName, sizeString string) {
 	addCanvas(containerName, "mycanvas", width, height)
 }
 
+/*
 func newWebSocket(url string) js.Object {
 	websocket := js.Global.Get("WebSocket")
 	if websocket != nil {
@@ -86,21 +124,35 @@ func wsOnClose(evt js.Object) {
 		appendLog(jQuery("<div><b>Connection closed.</b></div>"))
 }
 
-var firstRun = true
 func wsOnMessage(containerName string, evt js.Object) {
 	if firstRun {
-		sizeString := strings.TrimSpace(evt.Get("data").String())
+		sizeString := strings.TrimSpace(evt.Get("data").Str())
 		setupCanvas(containerName, sizeString)
 		firstRun = false
 	} else {
-		uri := evt.Get("data").String()
+		uri := evt.Get("data").Str()
 		updateCanvas("#mycanvas", uri)
+	}
+}
+*/
+
+var firstRun = true
+func jsOnConfig(containerName string, data js.Object) {
+	if firstRun {
+		width := data.Get("width").Int()
+		height := data.Get("height").Int()
+		addCanvas(containerName, "mycanvas", width, height)
+		firstRun = false
 	}
 }
 
 // opens a websocket to socketUrl and adds a canvas to containerName
 func setupSocket(socketUrl, containerName string) {
-	conn := newWebSocket(socketUrl)
+	jquery.GetJSON("/config", func(data js.Object) {
+		jsOnConfig(containerName, data)
+	})
+
+/*conn := newWebSocket(socketUrl)
 	if conn == nil {
 		appendLog(jQuery("<div><b>Your browser does not support WebSockets.</b></div>"))
 		return
@@ -108,7 +160,7 @@ func setupSocket(socketUrl, containerName string) {
 	conn.Set("onclose", wsOnClose)
 	conn.Set("onmessage", func(evt js.Object) {
 		wsOnMessage(containerName, evt)
-	})
+	})*/
 }
 
 // converts the canvas to an octet-stream downloadable image.
@@ -120,6 +172,8 @@ func saveImage(canvasName, linkName string) {
 
 func main() {
 	// export function names globally.
+	js.Global.Set("getXDelta", getXDelta)
+	js.Global.Set("getUpdateInterval", getUpdateInterval)
 	js.Global.Set("setupSocket", setupSocket)
 	js.Global.Set("addCanvas", addCanvas)
 	js.Global.Set("updateCanvas", updateCanvas)
