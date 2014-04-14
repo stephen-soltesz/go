@@ -60,7 +60,8 @@ func main() {
 	}
 
 	collector := collection.Default()
+	collector.Usetime = *timestamp
 	go startViewServer(*bindAddress, *viewerPort)
-	startCollectorServer(*bindAddress, *collectorPort, collector)
+	startCollectorServer(*bindAddress, *collectorPort)
 	//select {}
 }
