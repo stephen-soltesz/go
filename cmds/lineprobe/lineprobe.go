@@ -1,39 +1,102 @@
 /*
 This command is the client portion of the pipeline plotter.
 
-Lineprobe supports two modes. By default, it reads values from Stdin. Each line
-is a single value. If the argument `-command` is used, rather than reading from
-Stdin, lineprobe runs the given command and reads its output. The command
-should return a single value and exit with status 0. The command will be
-executed every 'interval' seconds.
+Lineprobe supports two modes. By default, it reads values from Stdin. As an
+alternate to reading from Stdin, lineprobe can execute a given command and read
+the command's Stdout. Each line is interprted as a single floating point value.
 
-Options
+If execting a given command, the command may output a single value, or
+multiple. If the command exits with status 0, it will be executed again after a
+configurable interval. If the command exists non-zero, then lineprobe exits
+also.
 
-These are command-line options.
+Command Options
 
-    -hostname=localhost:3131  Host and port of view server.
-    -interval=1.0             How often to run command.
-    -command=                 Command to run every second.
-    -axis=default             Name of axis to associate this line.
-    -xlabel=                  X-Label for axis.
-    -ylabel=                  Y-Label for axis.
-    -label=                   Line label name on axis.
-    -color=                   Color of line as "#ffffff". Chosen automatically by default.
-    -q                        Silence the echo of values sent to the server.
-    -exit                     Signal the lineviewer to exit. Useful when profiling the server.
-		-operation=<kind>,<samples>[,<percentile>]
-                              Perform an optional operation on collected samples 
-                              before sending to lineviewer.
-                              <kind> is one of "avg", "stdev", "perc".
-                              <samples> is an integer specifying the number of samples to operate over.
-                              <percentile> if kind=perc, then this is the percentile to
-                                 report from the last <samples> values.
-    -debug                    Print extra debug information.
+Each section below describes the lineprobe options.
+
+Typically, the lineprobe and lineviewer will run on the same system. When this
+is the case, default values work well. However, lineprobe can target a
+collector running on any system. To specify an alternate collector use:
+
+   -hostname=localhost:3131
+
+The default is for lineprobe to read from Stdin. However, lineprobe can execute
+a given command and read from the command's Stdout instead. After the command
+exits with a zero status, lineprobe waits an interval before re-executing the
+command. If the command exists non-zero, lineprobe also exits.
+
+   -interval=1.0
+   -command=
+
+By default, lineprobe reports on the values it receives and sends. To silence
+this, use:
+
+   -quiet
+
+For additional debug logging:
+
+   -debug
+
+Data Options
+
+The default operation for lineprobe is to forward values from a command to the
+lineviewer collector. Lineprobe also has the capability to perform simple
+operations on the raw data. Operations have this form:
+
+ -operation=<type>,<samples>[,<percentile>]
+
+Only the following operation types are supported: "avg", "stdev", "perc".
+"avg" and "stdev" take a single argument; the number of samples to operate over.
+
+The "perc", or percentile, type takes a second argument. The second argument is
+the percentile to report on from the collected samples.
+
+Plot Options
+
+Lineprobe can send line and plot style hints to the lineviewer.
+
+If not given, a line color is chosen automatically by the lineviewer. To
+specify the line color use a format like:
+
+   -color="#ffffff"
+
+Lines are given a default name based on the command executed or current PID and
+operation. To specify a custom name use:
+
+   -label=<name>
+
+To name the X and Y axis use:
+
+   -xlabel=<label>
+   -ylabel=<label>
+
+By default, all lines are added to a single axis. To create multiple axes
+specify a distinct axis name. Other lineprobes can use the same name to add
+lines to the same axis. The axis name is not user visible.
+
+   -axis=default
+
+For a given axis name, you can specify the the minimum and maximum values for
+the Y axis.
+
+   -ylimit=<ymin>:<ymax>
+
+Or, plot the Y-axis on a log scale.
+
+   -ylog
+
+Server Options
+
+Normally the lineviewer runs indefinitely. When profiling the server, it is
+necessary to cause the server to exit normally. This option tells the
+lineviewer to exit.
+
+   -exit
 
 Examples
 
 Reading data from stdin:
-    while /usr/bin/true; do ps ax | wc -l ; sleep 1 ; done | lineprobe
+ while /usr/bin/true; do ps ax | wc -l ; sleep 1 ; done | lineprobe
 
 Reading data from command output:
     lineprobe --command "ps ax | wc -l" --interval 2.0
@@ -71,30 +134,31 @@ var (
 	yaxisScale  = flag.Bool("ylog", false, "Y-axis should be log scale.")
 	lineName    = flag.String("label", "", "Line label name on axis.")
 	lineColor   = flag.String("color", "", "Color of line. Chosen automatically by default.")
-	quietOutput = flag.Bool("q", false, "Whether to echo values sent to server.")
+	quietOutput = flag.Bool("quiet", false, "Whether to echo values sent to server.")
 	exitServer  = flag.Bool("exit", false, "Tell the lineviewer to exit.")
 
 	calcOperations operationSlice
 
-	debug         = flag.Bool("debug", false, "Enable debug messages on stderr.")
-	debugLogger   *log.Logger
+	debug       = flag.Bool("debug", false, "Enable debug messages on stderr.")
+	debugLogger *log.Logger
 )
 
 type sampleSet struct {
 	samples []float64
-	pos int
+	pos     int
 }
 
 type ValueWriter struct {
-	writer *bufio.ReadWriter
-	server *lineserver.Server
-	op *Operation
+	writer  *bufio.ReadWriter
+	server  *lineserver.Server
+	op      *Operation
 	samples *sampleSet
 }
 
 type ValueReader struct {
-	reader *bufio.Reader
-	cmd *exec.Cmd
+	reader    *bufio.Reader
+	cmd       *exec.Cmd
+	fromStdin bool
 }
 
 func initFlags() {
@@ -145,7 +209,7 @@ func (ss *sampleSet) Mean() float64 {
 	for i := 0; i < count; i++ {
 		s += ss.samples[i]
 	}
-	avg := s/float64(count)
+	avg := s / float64(count)
 	debugLogger.Println("avg:", avg)
 	return avg
 }
@@ -158,7 +222,7 @@ func (ss *sampleSet) Stdev() float64 {
 	for i := 0; i < count; i++ {
 		variance += math.Pow((ss.samples[i] - avg), 2)
 	}
-	stdev := math.Sqrt(variance/float64(count))
+	stdev := math.Sqrt(variance / float64(count))
 	debugLogger.Println("stdev:", stdev)
 	return stdev
 }
@@ -168,7 +232,7 @@ func (ss *sampleSet) Percentile(pct int64) float64 {
 	var calc = make([]float64, count)
 	copy(calc, ss.samples)
 
-	i := int(math.Ceil(float64(count-1) * float64(pct)/101.0))
+	i := int(math.Ceil(float64(count-1) * float64(pct) / 101.0))
 	sort.Float64s(calc)
 	debugLogger.Println("size", count, "i", i)
 	debugLogger.Println("pct:", calc[i])
@@ -179,7 +243,7 @@ func NewValueWriter(op *Operation) *ValueWriter {
 	var err error
 	writer := ValueWriter{}
 	writer.op = op
-	fmt.Printf("%#v\n", op)
+	debugLogger.Printf("%#v\n", op)
 	writer.samples = newSampleSet(op.samples)
 	writer.server = lineserver.NewServer(*hostname)
 	if writer.writer, err = writer.server.Connect(); err != nil {
@@ -206,6 +270,7 @@ func (w *ValueWriter) SendValue(val float64) error {
 	if w.op.operation == OpMean {
 		f = w.samples.Mean()
 	} else if w.op.operation == OpStdev {
+		// TODO: create +/- stdev around mean.
 		f = w.samples.Stdev()
 	} else if w.op.operation == OpPercentile {
 		f = w.samples.Percentile(w.op.percentile)
@@ -224,7 +289,7 @@ func (w *ValueWriter) SendValue(val float64) error {
 func (w *ValueWriter) sendClientSettings() error {
 	var err error
 	if *exitServer {
-		fmt.Println("Sending exit")
+		debugLogger.Println("Sending exit")
 		_, err := w.writer.WriteString("EXIT\n")
 		if err != nil {
 			return err
@@ -286,18 +351,39 @@ func NewValueReader() *ValueReader {
 	return &reader
 }
 
-func (r *ValueReader) Setup() error {
-	var fromStdin bool = ("" == *command)
+func (r *ValueReader) HandleEOF() error {
+	if r.fromStdin {
+		// just pass along EOF if reading from Stdin.
+		return io.EOF
+	}
 
-	if fromStdin {
+	// reading from a command.
+	r.cmd.Wait() // must run Wait() after EOF to avoid races with Read().
+	if !r.cmd.ProcessState.Success() {
+		fmt.Println("Non-zero exit value from: " + *command)
+		// TODO: exit with child exit status.
+		os.Exit(1)
+	}
+
+	// pause before re-executing command.
+	time.Sleep(time.Duration(*interval) * time.Second)
+	return r.Setup()
+}
+
+func (r *ValueReader) Setup() error {
+	r.fromStdin = ("" == *command)
+
+	if r.fromStdin {
 		r.reader = bufio.NewReader(os.Stdin)
 	} else {
 		r.cmd = exec.Command("bash", "-c", *command)
 		output, err := r.cmd.StdoutPipe()
 		if err != nil {
+			debugLogger.Println("failed StdoutPipe", err)
 			return err
 		}
 		if err := r.cmd.Start(); err != nil {
+			debugLogger.Println("failed to Start command", err)
 			return err
 		}
 		r.reader = bufio.NewReader(output)
@@ -312,18 +398,15 @@ func (r *ValueReader) ReadValue() (float64, error) {
 
 	out, lineTooLong, err = r.reader.ReadLine()
 	if lineTooLong {
-		return 0.0, errors.New("line too long")
+		return 0.0, errors.New("Line too long.")
 	} else if err == io.EOF {
-		r.cmd.Wait()	// must run after EOF to avoid races with Read()
-		time.Sleep(time.Duration(*interval) * time.Second)
-		err := r.Setup()
+		err := r.HandleEOF()
 		if err != nil {
-			fmt.Println("reader setup failed:", err)
 			return 0.0, err
 		}
 		return r.ReadValue()
 	} else if err != nil {
-		fmt.Println("unknown failure:", err)
+		fmt.Println("Unknown failure:", err)
 		return 0.0, err
 	}
 
@@ -368,10 +451,15 @@ func main() {
 	writers := SetupValueWriters()
 
 	for {
+		// read one value.
 		if val, err = reader.ReadValue(); err != nil {
-			log.Println(err)
+			if err != io.EOF {
+				// only report non-EOF.
+				log.Println(err)
+			}
 			break
 		}
+		// and, send value to all writers.
 		for _, writer := range writers {
 			if err = writer.SendValue(val); err != nil {
 				log.Fatal(err)
