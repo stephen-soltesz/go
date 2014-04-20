@@ -9,6 +9,7 @@ import (
 	"image/color"
 	"image/png"
 	"io"
+	"fmt"
 	"os"
 	"path"
 	"time"
@@ -160,6 +161,9 @@ func (f *Figure) AddChart(title, xlabel, ylabel string, xmin, xmax float64) *Cha
 	axis.YRange.TicSetting.Mirror = chart.MirrorAxisOnly
 	axis.XRange.TicSetting.Grid = chart.GridLines
 	axis.YRange.TicSetting.Grid = chart.GridLines
+	axis.YRange.TicSetting.Format = func (val float64) string {
+		return fmt.Sprintf("%.1f", val)
+	}
 	axis.XRange.Time = f.usetime
 	if f.usetime {
 		axis.XRange.TFixed(time.Unix(int64(xmin), 0), time.Unix(int64(xmax), 0), nil)
