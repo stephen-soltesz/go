@@ -31,9 +31,12 @@ By default, the lineviewer treats the X-axis as the sequence number of each
 sample. However, the lineviewer can track the timestamp of when each value is
 received.
 
-  -timestamp                Enable timestamp collection for x-axis.
+  -timestamp                Collect and display samples with a timestamp.
   -plot_width=<int>         Width in pixels.
   -plot_height=<int>        Height in pixels.
+  -samples=<int>            Initial number of samples (or, seconds for -timestamp)
+                            to use in plots for new clients. Clients can adjust
+                            this interactively.
 
 Examples
 
@@ -63,6 +66,7 @@ var (
 	timestamp     = flag.Bool("timestamp", false, "Use timestamps as x-axis.")
 	plotWidth     = flag.Int("plot_width", 600, "Plot width in pixels.")
 	plotHeight    = flag.Int("plot_height", 400, "Plot height in pixels.")
+	plotSamples   = flag.Int("samples", 240, "Number of samples wide to make plots.")
 	debug         = flag.Bool("debug", false, "Enable debug messages on stderr.")
 	debugLogger   *log.Logger
 	profile       = flag.Bool("profile", false, "Enable profiling.")
