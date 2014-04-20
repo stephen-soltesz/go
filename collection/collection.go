@@ -185,8 +185,7 @@ func (ax *Axis) MaxX() float64 {
 	return xmax
 }
 
-// TODO: add a 'Window' argument to specify the data view to plot.
-func (c *Collection) Plot(writer io.Writer, width, height int, delta float64) error {
+func (c *Collection) Plot(writer io.Writer, width, height int, offset float64, samples float64) error {
 
 	fig := plotter.NewFigure(c.Usetime)
 	for _, ax := range c.Axes {
@@ -194,11 +193,11 @@ func (c *Collection) Plot(writer io.Writer, width, height int, delta float64) er
 		if c.Usetime {
 			// continuously update plot with most current time.
 			// TODO: make this an option.
-			xmax = float64(time.Now().Unix())-delta
+			xmax = float64(time.Now().Unix())-offset
 		} else {
 			xmax = ax.MaxX()
 		}
-		chart := fig.AddChart(c.Title, ax.XLabel, ax.YLabel, xmax-240, xmax)
+		chart := fig.AddChart(c.Title, ax.XLabel, ax.YLabel, xmax-samples, xmax)
 		chart.YRange.Log = ax.Uselog
 		if ax.Ylimit {
 			chart.YRange.Fixed(ax.Ymin, ax.Ymax, 0)
