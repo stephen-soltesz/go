@@ -2,9 +2,9 @@ package main
 
 import (
 	"bytes"
-//  "encoding/base64"
-  "encoding/json"
-//  "errors"
+	//  "encoding/base64"
+	"encoding/json"
+	//  "errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -22,7 +22,7 @@ import (
 )
 
 func startViewServer(host string, port int) {
-//	go hub.run()
+	//	go hub.run()
 	addr := fmt.Sprintf("%s:%d", host, port)
 	http.HandleFunc("/", serveHome)
 	http.HandleFunc("/ws", serveWs)
@@ -133,24 +133,27 @@ func (c *connection) write(mt int, payload []byte) error {
 	return c.ws.WriteMessage(mt, payload)
 }
 
-func getSvg(delta int64) []byte {
+func getSvg(offset, samples int64) []byte {
 	var img bytes.Buffer
 	collector := collection.Default()
-	if err := collector.Plot(&img, *plotWidth, *plotHeight, float64(delta)); err != nil {
+	err := collector.Plot(&img, *plotWidth, *plotHeight, float64(offset), float64(samples))
+	if err != nil {
 		return nil
 	}
 	return img.Bytes()
 }
 
 type Config struct {
-	Success bool `json:"success"`
-	Width   int	 `json:"width"`
-	Height  int  `json:"height"`
+	Success      bool `json:"success"`
+	WidthPixels  int  `json:"width"`
+	HeightPixels int  `json:"height"`
+	PlotSamples  int  `json:"samples"`
 }
 
 func serveConfig(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	cfg := &Config{Success: true, Width: *plotWidth, Height: *plotHeight}
+	cfg := &Config{Success: true, WidthPixels: *plotWidth,
+		HeightPixels: *plotHeight, PlotSamples: *plotSamples}
 	msg, err := json.Marshal(cfg)
 	if err != nil {
 		http.Error(w, "Server Error", 500)
@@ -254,6 +257,26 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 	//c.readPump()
 }
 
+func getFormValue(formVals url.Values, key string, defVal int64) (int64, error) {
+	var val int64
+	var err error
+
+	valStr, ok := formVals[key]
+	if !ok {
+		return defVal, nil
+	}
+
+	if len(valStr) > 0 {
+		val, err = strconv.ParseInt(valStr[0], 10, 64)
+		if err != nil {
+			return defVal, err
+		}
+	} else {
+		val = defVal
+	}
+	return val, nil
+}
+
 func splitAll(path string) (string, string, string) {
 	dir, file := filepath.Split(path)
 	if file == "" {
@@ -299,7 +322,8 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 
 func serveSvg(w http.ResponseWriter, r *http.Request) {
 	var err error
-	var delta int64
+	var offset int64
+	var samples int64
 
 	if r.Method != "GET" {
 		http.Error(w, "Method nod allowed", 405)
@@ -311,23 +335,17 @@ func serveSvg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	deltaStr, ok := formVals["delta"]
-	if !ok {
-		http.Error(w, "Bad Request. All parameters not provided.", 400)
+	if offset, err = getFormValue(formVals, "offset", 0); err != nil {
+		http.Error(w, "Bad Request. Could not convert parameters.", 400)
 		return
 	}
 
-	if len(deltaStr) > 0 {
-		delta, err = strconv.ParseInt(deltaStr[0], 10, 64)
-		if err != nil {
-			http.Error(w, "Bad Request. Could not convert parameters.", 400)
-			return
-		}
-	} else {
-		delta = 0
+	if samples, err = getFormValue(formVals, "samples", 240); err != nil {
+		http.Error(w, "Bad Request. Could not convert parameters.", 400)
+		return
 	}
 
-	svg := getSvg(delta)
+	svg := getSvg(offset, samples)
 	if svg != nil {
 		if *debug {
 			// save the current image to a file.
