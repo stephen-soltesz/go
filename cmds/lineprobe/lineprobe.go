@@ -5,7 +5,7 @@ Lineprobe supports two modes. By default, it reads values from Stdin. As an
 alternate to reading from Stdin, lineprobe can execute a given command and read
 the command's Stdout. Each line is interprted as a single floating point value.
 
-If execting a given command, the command may output a single value, or
+If executing a given command, the command may output a single value and exit, or
 multiple. If the command exits with status 0, it will be executed again after a
 configurable interval. If the command exists non-zero, then lineprobe exits
 also.
@@ -39,17 +39,26 @@ For additional debug logging:
 
 Data Options
 
-The default operation for lineprobe is to forward values from a command to the
+The default operation for lineprobe is to forward values directly to the
 lineviewer collector. Lineprobe also has the capability to perform simple
 operations on the raw data. Operations have this form:
 
- -operation=<type>,<samples>[,<percentile>]
+   -percentile=<samples>,<percentile>
+   -avg=<samples>[,<showStdev>]
+   -scale=1.0
+   -shift=0.0
 
-Only the following operation types are supported: "avg", "stdev", "perc".
-"avg" and "stdev" take a single argument; the number of samples to operate over.
+Operation -percentile requires two arguments separated by a comma. The first is
+the number of samples to operate over, and the second is the percentile to take
+from those samples.
 
-The "perc", or percentile, type takes a second argument. The second argument is
-the percentile to report on from the collected samples.
+Operation -avg requires one argument and an optional second separated by a
+comma. The first is the number of samples to average. If the second option is
+provided, a value of 'true' indicates that +/- standard deviation of the
+samples should be displayed along with the average.
+
+The -scale is applied to a calculated value. The -shift is applied after the
+-scale.
 
 Plot Options
 
@@ -136,12 +145,24 @@ var (
 	lineColor   = flag.String("color", "", "Color of line. Chosen automatically by default.")
 	quietOutput = flag.Bool("quiet", false, "Whether to echo values sent to server.")
 	exitServer  = flag.Bool("exit", false, "Tell the lineviewer to exit.")
-
-	calcOperations operationSlice
-
 	debug       = flag.Bool("debug", false, "Enable debug messages on stderr.")
 	debugLogger *log.Logger
+
+	calcScale   = flag.Float64("scale", 1.0, "Multiplies the given scale value with each sample.")
+	calcShift   = flag.Float64("shift", 0.0, "Adds the given shift value to each sample.")
+
+	// Initialized in initFlags().
+	calcNone    = &NoOperation{}
+	calcAvg     = &AvgOperation{}
+	calcPerc    = &PercOperation{}
 )
+
+func initFlags() {
+	flag.Var(calcPerc, "percentile",
+	    "Return the percentile over the given sample size: <samples>,<percentile>.")
+	flag.Var(calcAvg, "avg",
+	    "Return the avg over the given sample size: <samples>[,<showStdev>].")
+}
 
 type sampleSet struct {
 	samples []float64
@@ -151,7 +172,7 @@ type sampleSet struct {
 type ValueWriter struct {
 	writer  *bufio.ReadWriter
 	server  *lineserver.Server
-	op      *Operation
+	op      Operation
 	samples *sampleSet
 }
 
@@ -161,10 +182,6 @@ type ValueReader struct {
 	fromStdin bool
 }
 
-func initFlags() {
-	flag.Var(&calcOperations, "operation", "An operation to run on samples.")
-}
-
 func checkFlags() {
 	if *debug {
 		debugLogger = log.New(os.Stderr, "", 0)
@@ -172,7 +189,8 @@ func checkFlags() {
 		debugLogger = log.New(ioutil.Discard, "", 0)
 	}
 	if len(calcOperations) == 0 {
-		calcOperations = append(calcOperations, &Operation{OpPercentile, 1, 50})
+		// create one default operation if no others were specified.
+		calcNone.Set("")
 	}
 }
 
@@ -214,6 +232,10 @@ func (ss *sampleSet) Mean() float64 {
 	return avg
 }
 
+func (ss *sampleSet) Current() float64 {
+	return ss.samples[ss.pos%len(ss.samples)]
+}
+
 func (ss *sampleSet) Stdev() float64 {
 	count := ss.Count()
 	avg := ss.Mean()
@@ -234,17 +256,16 @@ func (ss *sampleSet) Percentile(pct int64) float64 {
 
 	i := int(math.Ceil(float64(count-1) * float64(pct) / 101.0))
 	sort.Float64s(calc)
-	debugLogger.Println("size", count, "i", i)
-	debugLogger.Println("pct:", calc[i])
+	debugLogger.Println("size", count, "i", i, "pct:", calc[i])
 	return calc[i]
 }
 
-func NewValueWriter(op *Operation) *ValueWriter {
+func NewValueWriter(op Operation) *ValueWriter {
 	var err error
+	debugLogger.Printf("%#v\n", op)
 	writer := ValueWriter{}
 	writer.op = op
-	debugLogger.Printf("%#v\n", op)
-	writer.samples = newSampleSet(op.samples)
+	writer.samples = newSampleSet(op.Samples())
 	writer.server = lineserver.NewServer(*hostname)
 	if writer.writer, err = writer.server.Connect(); err != nil {
 		log.Fatal(err)
@@ -252,14 +273,18 @@ func NewValueWriter(op *Operation) *ValueWriter {
 	return &writer
 }
 
+func SetupValueWriter(op Operation) *ValueWriter {
+	writer := NewValueWriter(op)
+	if err := writer.sendClientSettings(); err != nil {
+		log.Fatal(err)
+	}
+	return writer
+}
+
 func SetupValueWriters() []*ValueWriter {
 	var writers []*ValueWriter
 	for _, op := range calcOperations {
-		writer := NewValueWriter(op)
-		if err := writer.sendClientSettings(); err != nil {
-			log.Fatal(err)
-		}
-		writers = append(writers, writer)
+		writers = append(writers, SetupValueWriter(op))
 	}
 	return writers
 }
@@ -267,17 +292,33 @@ func SetupValueWriters() []*ValueWriter {
 func (w *ValueWriter) SendValue(val float64) error {
 	var f float64
 	w.samples.Append(val)
-	if w.op.operation == OpMean {
-		f = w.samples.Mean()
-	} else if w.op.operation == OpStdev {
-		// TODO: create +/- stdev around mean.
-		f = w.samples.Stdev()
-	} else if w.op.operation == OpPercentile {
-		f = w.samples.Percentile(w.op.percentile)
+	switch w.op.(type) {
+		case *NoOperation:
+			f = w.samples.Current()
+		case *AvgOperation:
+			avgOp := w.op.(*AvgOperation)
+			if avgOp.Extra() == 0 {
+				f = w.samples.Mean()
+			} else if avgOp.Extra() <= -1 {
+				f = w.samples.Mean() - w.samples.Stdev()
+			} else if avgOp.Extra() >= 1 {
+				f = w.samples.Mean() + w.samples.Stdev()
+			}
+		case *PercOperation:
+			f = w.samples.Percentile(w.op.Extra())
 	}
 
+	if *calcScale != 1.0 {
+		debugLogger.Printf("Scale %f*%f=%f", f, *calcScale, *calcScale * f)
+	}
+	f *= *calcScale
+	if *calcShift != 0.0 {
+		debugLogger.Printf("Shift %f+%f=%f", f, *calcShift, *calcShift + f)
+	}
+	f += *calcShift
+
 	out := formatFloat(f)
-	fmt.Printf("Sending: %s", string(out))
+	fmt.Printf("Sending: %s %s", w.op, string(out))
 	_, err := w.writer.Write(out)
 	if err != nil {
 		return err
@@ -297,7 +338,7 @@ func (w *ValueWriter) sendClientSettings() error {
 		w.writer.Flush()
 		// create new connection to trigger exit.
 		time.Sleep(time.Second)
-		NewValueWriter(&Operation{OpNone, 0, 0})
+		NewValueWriter(newNoOperation())
 		os.Exit(0)
 	}
 	axisSetting := "axis:" + *axisName + ":" + *xlabelName + ":" + *ylabelName + "\n"
@@ -320,16 +361,16 @@ func (w *ValueWriter) sendClientSettings() error {
 	}
 
 	name := ""
-	if w.op.operation > OpNone {
-		name = fmt.Sprintf("%s-", w.op)
+	if len(calcOperations) > 1 {
+		name = fmt.Sprintf("%s", w.op)
 	}
 
 	if *lineName != "" {
-		name = "label:" + *lineName + "\n"
+		name = "label:" + *lineName + name + "\n"
 	} else if *command != "" {
-		name = "label:" + name + *command + "\n"
+		name = "label:" + *command + name + "\n"
 	} else {
-		name = "label:" + name + fmt.Sprintf("Thread-%d\n", os.Getpid())
+		name = "label:" + fmt.Sprintf("Thread-%d", os.Getpid()) + name + "\n"
 	}
 
 	if _, err = w.writer.WriteString(name); err != nil {
@@ -420,16 +461,6 @@ func (r *ValueReader) ReadValue() (float64, error) {
 	return f, nil
 }
 
-func parseFloat(val []byte) float64 {
-	fmt.Println("%v", val)
-	f, err := strconv.ParseFloat(string(val), 64)
-	if err != nil {
-		debugLogger.Println(err)
-		return 0.0
-	}
-	return f
-}
-
 func formatFloat(f float64) []byte {
 	return []byte(fmt.Sprintf("%f\n", f))
 }
@@ -454,8 +485,7 @@ func main() {
 		// read one value.
 		if val, err = reader.ReadValue(); err != nil {
 			if err != io.EOF {
-				// only report non-EOF.
-				log.Println(err)
+				log.Println(err) // only report non-EOF.
 			}
 			break
 		}
