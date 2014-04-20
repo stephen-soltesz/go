@@ -2520,7 +2520,7 @@ go$packages["strings"] = (function() {
 	return go$pkg;
 })();
 go$packages["main"] = (function() {
-	var go$pkg = {}, strconv = go$packages["strconv"], strings = go$packages["strings"], math = go$packages["math"], js = go$packages["github.com/gopherjs/gopherjs/js"], jquery = go$packages["github.com/gopherjs/jquery"], Image, getUpdateInterval, appendLog, newImage, getXDelta, addCanvas, updateCanvas, jsOnConfig, setupSocket, saveImage, main, jQuery, document, xDelta, updateInterval, firstRun;
+	var go$pkg = {}, strconv = go$packages["strconv"], strings = go$packages["strings"], math = go$packages["math"], js = go$packages["github.com/gopherjs/gopherjs/js"], jquery = go$packages["github.com/gopherjs/jquery"], Image, getUpdateInterval, appendLog, newImage, getXOffset, getPlotSamples, addCanvas, updateCanvas, jsOnConfig, setupSocket, saveImage, main, jQuery, document, xOffset, plotSamples, updateInterval, firstRun;
 	Image = go$pkg.Image = go$newType(0, "Struct", "main.Image", "Image", "main", function(Object_) {
 		this.go$val = this;
 		this.Object = Object_ !== undefined ? Object_ : null;
@@ -2553,11 +2553,14 @@ go$packages["main"] = (function() {
 		img.Object.addEventListener(go$externalize(event, Go$String), go$externalize(callback, (go$funcType([], [], false))), go$externalize(capture, Go$Bool));
 	};
 	Image.prototype.addEventListener = function(event, capture, callback) { return this.go$val.addEventListener(event, capture, callback); };
-	getXDelta = function(inc) {
-		if (inc && xDelta < 0) {
-			xDelta = xDelta + ((updateInterval / 1000));
+	getXOffset = function(inc) {
+		if (inc && xOffset < 0) {
+			xOffset = xOffset + ((updateInterval / 1000));
 		}
-		return new Go$Int64(0, math.Floor(xDelta));
+		return new Go$Int64(0, math.Floor(xOffset));
+	};
+	getPlotSamples = function() {
+		return plotSamples;
 	};
 	addCanvas = function(containerName, canvasName, width, height) {
 		var canvas, mouseDown, mousePrevPos;
@@ -2582,9 +2585,18 @@ go$packages["main"] = (function() {
 				if (!(go$interfaceIsEqual(mousePrevPos, null))) {
 					curr = go$parseInt(evt.clientX) >> 0;
 					prev = go$parseInt(mousePrevPos.clientX) >> 0;
-					xDelta = xDelta + ((curr - prev >> 0));
+					xOffset = xOffset + ((curr - prev >> 0));
 				}
 				mousePrevPos = evt;
+			}
+		}), (go$funcType([js.Object], [], false)));
+		document.onmousewheel = go$externalize((function(evt) {
+			var scroll;
+			scroll = go$parseInt(evt.wheelDeltaY) >> 0;
+			if (scroll > 0 && (plotSamples.high < 0 || (plotSamples.high === 0 && plotSamples.low < 1000))) {
+				plotSamples = new Go$Int64(plotSamples.high + 0, plotSamples.low + 10);
+			} else if (scroll < 0 && (plotSamples.high > 0 || (plotSamples.high === 0 && plotSamples.low > 60))) {
+				plotSamples = new Go$Int64(plotSamples.high - 0, plotSamples.low - 10);
 			}
 		}), (go$funcType([js.Object], [], false)));
 		jQuery(new (go$sliceType(go$emptyInterface))([new Go$String(containerName)])).Prepend(new (go$sliceType(go$emptyInterface))([canvas]));
@@ -2603,6 +2615,7 @@ go$packages["main"] = (function() {
 		if (firstRun) {
 			width = go$parseInt(data.width) >> 0;
 			height = go$parseInt(data.height) >> 0;
+			plotSamples = go$internalize(data.samples, Go$Int64);
 			addCanvas(containerName, "mycanvas", width, height);
 			firstRun = false;
 		}
@@ -2619,7 +2632,8 @@ go$packages["main"] = (function() {
 		jQuery(new (go$sliceType(go$emptyInterface))([new Go$String(linkName)])).Get(new (go$sliceType(go$emptyInterface))([new Go$Int(0)])).href = url;
 	};
 	main = go$pkg.main = function() {
-		go$global.getXDelta = go$externalize(getXDelta, (go$funcType([Go$Bool], [Go$Int64], false)));
+		go$global.getXOffset = go$externalize(getXOffset, (go$funcType([Go$Bool], [Go$Int64], false)));
+		go$global.getPlotSamples = go$externalize(getPlotSamples, (go$funcType([], [Go$Int64], false)));
 		go$global.getUpdateInterval = go$externalize(getUpdateInterval, (go$funcType([], [Go$Float64], false)));
 		go$global.setupSocket = go$externalize(setupSocket, (go$funcType([Go$String, Go$String], [], false)));
 		go$global.addCanvas = go$externalize(addCanvas, (go$funcType([Go$String, Go$String, Go$Int, Go$Int], [], false)));
@@ -2633,7 +2647,8 @@ go$packages["main"] = (function() {
 		Image.init([["Object", "", "", js.Object, ""]]);
 		jQuery = jquery.NewJQuery;
 		document = go$global.document;
-		xDelta = 0;
+		xOffset = 0;
+		plotSamples = new Go$Int64(0, 240);
 		updateInterval = 1000;
 		firstRun = true;
 	}
