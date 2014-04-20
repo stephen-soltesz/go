@@ -12,7 +12,8 @@ import (
 
 var jQuery = jquery.NewJQuery
 var document = js.Global.Get("document")
-var xDelta float64 = 0
+var xOffset float64 = 0
+var plotSamples int64 = 240
 var updateInterval float64 = 1000
 
 func getUpdateInterval() float64 {
@@ -46,11 +47,15 @@ func (img *Image) addEventListener(event string, capture bool, callback func()) 
 	img.Call("addEventListener", event, callback, capture)
 }
 
-func getXDelta(inc bool) int64 {
-	if inc && xDelta < 0 {
-		xDelta += (updateInterval/1000.0) // 1.0
+func getXOffset(inc bool) int64 {
+	if inc && xOffset < 0 {
+		xOffset += (updateInterval/1000.0) // 1.0
 	}
-	return int64(math.Floor(xDelta))
+	return int64(math.Floor(xOffset))
+}
+
+func getPlotSamples() int64 {
+	return plotSamples
 }
 
 func addCanvas(containerName, canvasName string, width, height int) {
@@ -76,10 +81,19 @@ func addCanvas(containerName, canvasName string, width, height int) {
 			if mousePrevPos != nil {
 				curr := evt.Get("clientX").Int()
 				prev := mousePrevPos.Get("clientX").Int()
-				xDelta += float64(curr - prev)
+				xOffset += float64(curr - prev)
 			}
 			mousePrevPos = evt
 		}
+	})
+	document.Set("onmousewheel", func(evt js.Object) {
+		scroll := evt.Get("wheelDeltaY").Int()
+		if scroll > 0 && plotSamples < 1000 {
+			plotSamples += 10
+		} else if scroll < 0 && plotSamples > 60 {
+			plotSamples -= 10
+		}
+		//println(plotSamples, scroll)
 	})
 	jQuery(containerName).Prepend(canvas)
 }
@@ -141,6 +155,7 @@ func jsOnConfig(containerName string, data js.Object) {
 	if firstRun {
 		width := data.Get("width").Int()
 		height := data.Get("height").Int()
+		plotSamples = data.Get("samples").Int64()
 		addCanvas(containerName, "mycanvas", width, height)
 		firstRun = false
 	}
@@ -172,7 +187,8 @@ func saveImage(canvasName, linkName string) {
 
 func main() {
 	// export function names globally.
-	js.Global.Set("getXDelta", getXDelta)
+	js.Global.Set("getXOffset", getXOffset)
+	js.Global.Set("getPlotSamples", getPlotSamples)
 	js.Global.Set("getUpdateInterval", getUpdateInterval)
 	js.Global.Set("setupSocket", setupSocket)
 	js.Global.Set("addCanvas", addCanvas)
