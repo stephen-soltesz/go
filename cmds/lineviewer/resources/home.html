@@ -9,7 +9,7 @@
 		$(function() {
 			setupSocket("ws://{{$}}/ws", "#container");
 			var repeatUpdate = function() {
-				var uri = "/svg?delta="+getXDelta(true);
+				var uri = "/svg?offset="+getXOffset(true)+"&samples="+getPlotSamples();
 				updateCanvas("#mycanvas", uri);
 				setTimeout(repeatUpdate, getUpdateInterval());
 			};
