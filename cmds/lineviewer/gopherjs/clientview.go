@@ -49,7 +49,7 @@ func (img *Image) addEventListener(event string, capture bool, callback func()) 
 
 func getXOffset(inc bool) int64 {
 	if inc && xOffset < 0 {
-		xOffset += (updateInterval/1000.0) // 1.0
+		xOffset += (updateInterval/1000.0)
 	}
 	return int64(math.Floor(xOffset))
 }
@@ -93,7 +93,6 @@ func addCanvas(containerName, canvasName string, width, height int) {
 		} else if scroll < 0 && plotSamples > 60 {
 			plotSamples -= 10
 		}
-		//println(plotSamples, scroll)
 	})
 	jQuery(containerName).Prepend(canvas)
 }
@@ -125,31 +124,6 @@ func setupCanvas(containerName, sizeString string) {
 	addCanvas(containerName, "mycanvas", width, height)
 }
 
-/*
-func newWebSocket(url string) js.Object {
-	websocket := js.Global.Get("WebSocket")
-	if websocket != nil {
-		return websocket.New(url)
-	}
-	return nil
-}
-
-func wsOnClose(evt js.Object) {
-		appendLog(jQuery("<div><b>Connection closed.</b></div>"))
-}
-
-func wsOnMessage(containerName string, evt js.Object) {
-	if firstRun {
-		sizeString := strings.TrimSpace(evt.Get("data").Str())
-		setupCanvas(containerName, sizeString)
-		firstRun = false
-	} else {
-		uri := evt.Get("data").Str()
-		updateCanvas("#mycanvas", uri)
-	}
-}
-*/
-
 var firstRun = true
 func jsOnConfig(containerName string, data js.Object) {
 	if firstRun {
@@ -166,16 +140,6 @@ func setupSocket(socketUrl, containerName string) {
 	jquery.GetJSON("/config", func(data js.Object) {
 		jsOnConfig(containerName, data)
 	})
-
-/*conn := newWebSocket(socketUrl)
-	if conn == nil {
-		appendLog(jQuery("<div><b>Your browser does not support WebSockets.</b></div>"))
-		return
-	}
-	conn.Set("onclose", wsOnClose)
-	conn.Set("onmessage", func(evt js.Object) {
-		wsOnMessage(containerName, evt)
-	})*/
 }
 
 // converts the canvas to an octet-stream downloadable image.
