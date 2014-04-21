@@ -5,11 +5,11 @@ interface composed of Figures, Charts, and Data
 package plotter
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"image/png"
 	"io"
-	"fmt"
 	"os"
 	"path"
 	"time"
@@ -20,11 +20,10 @@ import (
 	//"github.com/vdobler/chart"
 	//"github.com/vdobler/chart/imgg"
 	//"github.com/vdobler/chart/svgg"
+	"github.com/ajstarks/svgo"
 	"github.com/stephen-soltesz/chart"
 	"github.com/stephen-soltesz/chart/imgg"
 	"github.com/stephen-soltesz/chart/svgg"
-
-	"github.com/ajstarks/svgo"
 )
 
 type Style chart.Style
@@ -161,7 +160,7 @@ func (f *Figure) AddChart(title, xlabel, ylabel string, xmin, xmax float64) *Cha
 	axis.YRange.TicSetting.Mirror = chart.MirrorAxisOnly
 	axis.XRange.TicSetting.Grid = chart.GridLines
 	axis.YRange.TicSetting.Grid = chart.GridLines
-	axis.YRange.TicSetting.Format = func (val float64) string {
+	axis.YRange.TicSetting.Format = func(val float64) string {
 		return fmt.Sprintf("%.1f", val)
 	}
 	axis.XRange.Time = f.usetime
@@ -175,21 +174,21 @@ func (f *Figure) AddChart(title, xlabel, ylabel string, xmin, xmax float64) *Cha
 	fSmall := chart.Font{Size: chart.SmallFontSize}
 	fNormal := chart.Font{Size: chart.NormalFontSize}
 	sKey := chart.Style{LineColor: color.Gray{0x88},
-	                    LineStyle: chart.SolidLine,
-											LineWidth: 1,
-	                    FillColor: color.NRGBA{0xf8, 0xf8, 0xf8, 0x66},
-	                    Font: fSmall}
+		LineStyle: chart.SolidLine,
+		LineWidth: 1,
+		FillColor: color.NRGBA{0xf8, 0xf8, 0xf8, 0x66},
+		Font:      fSmall}
 	sGrid := chart.Style{LineStyle: chart.DashedLine,
-											 LineColor: color.Gray{0xbb},
-											 LineWidth: 1}
+		LineColor: color.Gray{0xbb},
+		LineWidth: 1}
 	sZero := chart.Style{LineStyle: chart.DashedLine,
-											 LineColor: color.Gray{0xbb}}
+		LineColor: color.Gray{0xbb}}
 	sMajor := chart.Style{LineColor: color.Gray{0x88},
-												LineWidth: 1,
-												Font: fNormal}
+		LineWidth: 1,
+		Font:      fNormal}
 	sTic := chart.Style{LineWidth: 1,
-											LineColor: color.Gray{0x88},
-											Font: fNormal}
+		LineColor: color.Gray{0x88},
+		Font:      fNormal}
 	sRange := chart.Style{LineWidth: 1, Font: fNormal}
 	sTitle := chart.Style{LineWidth: 1, Font: fNormal}
 
@@ -198,15 +197,15 @@ func (f *Figure) AddChart(title, xlabel, ylabel string, xmin, xmax float64) *Cha
 	//                   chart.PlotBackgroundElement: sBg,
 
 	axis.Options = chart.PlotOptions{
-			chart.GridLineElement:	 sGrid,
-			chart.ZeroAxisElement:   sZero,
-			chart.MajorAxisElement:  sMajor,
-			chart.MinorAxisElement:  sMajor,
-			chart.MajorTicElement:   sTic,
-			chart.MinorTicElement:   sTic,
-			chart.KeyElement:				 sKey,
-			chart.RangeLimitElement: sRange,
-			chart.TitleElement:      sTitle}
+		chart.GridLineElement:   sGrid,
+		chart.ZeroAxisElement:   sZero,
+		chart.MajorAxisElement:  sMajor,
+		chart.MinorAxisElement:  sMajor,
+		chart.MajorTicElement:   sTic,
+		chart.MinorTicElement:   sTic,
+		chart.KeyElement:        sKey,
+		chart.RangeLimitElement: sRange,
+		chart.TitleElement:      sTitle}
 	axis.Key.Cols = 1
 	axis.Key.Pos = "itl"
 
@@ -225,10 +224,6 @@ func (ax *Chart) AddData(name string, x, y []float64, style Style) *Data {
 	return &line
 }
 
-//func (ax *Chart) LenDatas() int {
-//  return len(ax.Data)
-//}
-
 /*
 // must be called after a plot
 func (ax *Chart) PlotArea() (int, int, int, int) {
@@ -239,7 +234,3 @@ func (ax *Chart) PlotArea() (int, int, int, int) {
   return x1, y1, w1, h1
 }
 */
-
-//func (l *Data) GetName() string {
-//  return l.Name
-//}
