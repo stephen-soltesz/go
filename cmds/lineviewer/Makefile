@@ -11,5 +11,3 @@ resources.go: resources/*
 
 $(LINESERVER): *.go
 	go install github.com/stephen-soltesz/go/cmds/lineviewer
-
-#	go build server*.go resources.go
