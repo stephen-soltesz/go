@@ -5,7 +5,7 @@ Collection containers are hierarchical.  A Collection contains one or more Axis
 objects. And each Axis contains one or more Line objects. So, if you only need
 a single "Collection", a default is provided using:
 
-    collection.Default().
+    collection.Default()
 
 Since collections exist to help with plotting line data, there is one
 convenience function for plotting. To generate an image representing the
@@ -195,7 +195,7 @@ func (c *Collection) Plot(writer io.Writer, width, height int, offset float64, s
 			// TODO: make this an option.
 			xmax = float64(time.Now().Unix())-offset
 		} else {
-			xmax = ax.MaxX()
+			xmax = ax.MaxX()-offset
 		}
 		chart := fig.AddChart(c.Title, ax.XLabel, ax.YLabel, xmax-samples, xmax)
 		chart.YRange.Log = ax.Uselog
