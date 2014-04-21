@@ -1,16 +1,16 @@
 package main
 
 import (
-	"fmt"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 )
 
 type Operation interface {
-	Samples() int64			// number of samples to collect
-	Extra() int64				// extra data related to the operation type.
-	String() string			// return the name of this operation.
+	Samples() int64 // number of samples to collect
+	Extra() int64   // extra data related to the operation type.
+	String() string // return the name of this operation.
 }
 
 type operationSlice []Operation
@@ -18,7 +18,7 @@ type operationSlice []Operation
 var calcOperations operationSlice
 
 func (ops *operationSlice) Append(op Operation) {
-  *ops = append(*ops, op)
+	*ops = append(*ops, op)
 }
 
 func (ops *operationSlice) String() string {
@@ -56,7 +56,7 @@ func (op *NoOperation) String() string {
 
 type AvgOperation struct {
 	samples int64
-	extra int64
+	extra   int64
 }
 
 func newAvgOperation(samples int64, showStdev int64) *AvgOperation {
@@ -88,7 +88,7 @@ func (op *AvgOperation) Set(value string) error {
 	}
 
 	if showStdev {
-		// also calculate +/- stdev 
+		// also calculate +/- stdev
 		avg := newAvgOperation(numSamples, 1)
 		calcOperations.Append(avg)
 		avg = newAvgOperation(numSamples, -1)
@@ -116,7 +116,7 @@ func (op *AvgOperation) String() string {
 }
 
 type PercOperation struct {
-	samples int64
+	samples    int64
 	percentile int64
 }
 
@@ -158,4 +158,3 @@ func (op *PercOperation) Samples() int64 {
 func (op *PercOperation) Extra() int64 {
 	return op.percentile
 }
-

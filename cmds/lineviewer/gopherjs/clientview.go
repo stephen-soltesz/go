@@ -1,9 +1,9 @@
 package main
 
 import (
+	"math"
 	"strconv"
 	"strings"
-	"math"
 
 	// third-party
 	"github.com/gopherjs/gopherjs/js"
@@ -27,9 +27,9 @@ func appendLog(msg jquery.JQuery) {
 	scrollTop := d.Get("scrollTop").Int()
 	scrollHeight := d.Get("scrollHeight").Int()
 	clientHeight := d.Get("clientHeight").Int()
-	doScroll := (scrollTop < scrollHeight - clientHeight)
+	doScroll := (scrollTop < scrollHeight-clientHeight)
 	if doScroll {
-		d.Set("scrollTop", scrollHeight - clientHeight)
+		d.Set("scrollTop", scrollHeight-clientHeight)
 	}
 }
 
@@ -49,7 +49,7 @@ func (img *Image) addEventListener(event string, capture bool, callback func()) 
 
 func getXOffset(inc bool) int64 {
 	if inc && xOffset < 0 {
-		xOffset += (updateInterval/1000.0)
+		xOffset += (updateInterval / 1000.0)
 	}
 	return int64(math.Floor(xOffset))
 }
@@ -125,6 +125,7 @@ func setupCanvas(containerName, sizeString string) {
 }
 
 var firstRun = true
+
 func jsOnConfig(containerName string, data js.Object) {
 	if firstRun {
 		width := data.Get("width").Int()

@@ -148,20 +148,20 @@ var (
 	debug       = flag.Bool("debug", false, "Enable debug messages on stderr.")
 	debugLogger *log.Logger
 
-	calcScale   = flag.Float64("scale", 1.0, "Multiplies the given scale value with each sample.")
-	calcShift   = flag.Float64("shift", 0.0, "Adds the given shift value to each sample.")
+	calcScale = flag.Float64("scale", 1.0, "Multiplies the given scale value with each sample.")
+	calcShift = flag.Float64("shift", 0.0, "Adds the given shift value to each sample.")
 
 	// Initialized in initFlags().
-	calcNone    = &NoOperation{}
-	calcAvg     = &AvgOperation{}
-	calcPerc    = &PercOperation{}
+	calcNone = &NoOperation{}
+	calcAvg  = &AvgOperation{}
+	calcPerc = &PercOperation{}
 )
 
 func initFlags() {
 	flag.Var(calcPerc, "percentile",
-	    "Return the percentile over the given sample size: <samples>,<percentile>.")
+		"Return the percentile over the given sample size: <samples>,<percentile>.")
 	flag.Var(calcAvg, "avg",
-	    "Return the avg over the given sample size: <samples>[,<showStdev>].")
+		"Return the avg over the given sample size: <samples>[,<showStdev>].")
 }
 
 type sampleSet struct {
@@ -293,27 +293,27 @@ func (w *ValueWriter) SendValue(val float64) error {
 	var f float64
 	w.samples.Append(val)
 	switch w.op.(type) {
-		case *NoOperation:
-			f = w.samples.Current()
-		case *AvgOperation:
-			avgOp := w.op.(*AvgOperation)
-			if avgOp.Extra() == 0 {
-				f = w.samples.Mean()
-			} else if avgOp.Extra() <= -1 {
-				f = w.samples.Mean() - w.samples.Stdev()
-			} else if avgOp.Extra() >= 1 {
-				f = w.samples.Mean() + w.samples.Stdev()
-			}
-		case *PercOperation:
-			f = w.samples.Percentile(w.op.Extra())
+	case *NoOperation:
+		f = w.samples.Current()
+	case *AvgOperation:
+		avgOp := w.op.(*AvgOperation)
+		if avgOp.Extra() == 0 {
+			f = w.samples.Mean()
+		} else if avgOp.Extra() <= -1 {
+			f = w.samples.Mean() - w.samples.Stdev()
+		} else if avgOp.Extra() >= 1 {
+			f = w.samples.Mean() + w.samples.Stdev()
+		}
+	case *PercOperation:
+		f = w.samples.Percentile(w.op.Extra())
 	}
 
 	if *calcScale != 1.0 {
-		debugLogger.Printf("Scale %f*%f=%f", f, *calcScale, *calcScale * f)
+		debugLogger.Printf("Scale %f*%f=%f", f, *calcScale, *calcScale*f)
 	}
 	f *= *calcScale
 	if *calcShift != 0.0 {
-		debugLogger.Printf("Shift %f+%f=%f", f, *calcShift, *calcShift + f)
+		debugLogger.Printf("Shift %f+%f=%f", f, *calcShift, *calcShift+f)
 	}
 	f += *calcShift
 

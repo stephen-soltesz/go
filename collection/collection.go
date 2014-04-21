@@ -38,13 +38,13 @@ type Collection struct {
 
 // A Collection contains one or more Axis objects.
 type Axis struct {
-	Name   string
-	XLabel string
-	YLabel string
-	Lines  map[string]*Line
-	Ylimit bool
-	Ymin, Ymax	 float64
-	Uselog  bool
+	Name       string
+	XLabel     string
+	YLabel     string
+	Lines      map[string]*Line
+	Ylimit     bool
+	Ymin, Ymax float64
+	Uselog     bool
 }
 
 // An Axis contains one or more Line objects.
@@ -193,9 +193,9 @@ func (c *Collection) Plot(writer io.Writer, width, height int, offset float64, s
 		if c.Usetime {
 			// continuously update plot with most current time.
 			// TODO: make this an option.
-			xmax = float64(time.Now().Unix())-offset
+			xmax = float64(time.Now().Unix()) - offset
 		} else {
-			xmax = ax.MaxX()-offset
+			xmax = ax.MaxX() - offset
 		}
 		chart := fig.AddChart(c.Title, ax.XLabel, ax.YLabel, xmax-samples, xmax)
 		chart.YRange.Log = ax.Uselog
