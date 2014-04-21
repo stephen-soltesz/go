@@ -5,14 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	//"os"
-	//"math/rand"
-	"github.com/stephen-soltesz/go/collection"
-	"github.com/stephen-soltesz/go/lineserver"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	// third-party
+	"github.com/stephen-soltesz/go/collection"
+	"github.com/stephen-soltesz/go/lineserver"
 )
 
 var configPattern = regexp.MustCompile("axis|reset|exit|color|label")
@@ -69,7 +69,6 @@ func (client *CollectorClient) readSettings(val string) {
 			fmt.Println("Got EXIT signal")
 			exitEarly = true
 			return
-			//os.Exit(0)
 		} else if fields[0] == "RESET" {
 			fmt.Println("NOT YET SUPPORTED")
 		} else {
@@ -161,39 +160,3 @@ func handleClient(client *CollectorClient) {
 		client.line.Append(x, y)
 	}
 }
-
-/*
-func randRange(min, max int) float64 {
-    y := float64(rand.Intn(max-min))
-    return float64(min)+y
-}
-
-func newFilter(size int) (func(float64) float64) {
-  b := make([]float64, size)
-  i := 0
-  return func(f float64) float64 {
-    b[i%len(b)] = f
-    i++
-    sum := 0.0
-    for _, value := range b {
-          sum += value
-    }
-    return sum/float64(len(b))
-  }
-}
-
-func generateData(min, max int) {
-	axis := collection.Default().GetAxis("default")
-	line := axis.AddLine("Thread-gen")
-  filt := newFilter(3)
-  count := 0.0
-  for {
-    //ts := float64(time.Now().Unix()/10)
-    y := filt(randRange(min, max))
-    // mock client: add a new point every second.
-    line.Append(count, y)
-    count++
-    time.Sleep(time.Second)
-  }
-}
-*/
