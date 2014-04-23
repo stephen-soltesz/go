@@ -126,6 +126,7 @@ import (
 	"os/exec"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	// third-party
@@ -451,7 +452,7 @@ func (r *ValueReader) ReadValue() (float64, error) {
 		return 0.0, err
 	}
 
-	f, err := strconv.ParseFloat(string(out), 64)
+	f, err := strconv.ParseFloat(strings.TrimSpace(string(out)), 64)
 	if err != nil {
 		return 0.0, err
 	}
