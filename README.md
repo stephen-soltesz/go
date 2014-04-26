@@ -3,6 +3,17 @@ ThinkSeeDo Go Packages
 
 Custom Go packages. Command line tools are in the `cmds` directory.
 
+### Motivation
+
+The pipeline viewer plots ephemeral data in real-time from the command line.
+Pipeline viewer makes one-off system performance visualization simpler. The
+server requires no setup because all data is kept in memory. The server can
+receive data from multiple clients, plot multiple axes at once, and display
+plots for many viewers.
+
+Monitoring services that archive data require additional server setup, and/or
+storage requirements, and/or use agent protocols that complicate one-time use.
+
 ### Install Pipeline Viewer
 
 All command and package sources include any generated sources. So, `go get`
