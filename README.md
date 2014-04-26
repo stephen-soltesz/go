@@ -1,7 +1,7 @@
 ThinkSeeDo Go Packages
 ======================
 
-Custom Go packages. Command line tools are in the `cmds` directory.
+Command line tools are in the `cmds` directory.
 
 ### Motivation
 
