@@ -13,6 +13,7 @@ plots for many viewers.
 
 Monitoring services that archive data require additional server setup, and/or
 storage requirements, and/or use agent protocols that complicate one-time use.
+The simplest pipeline viewer client is a pipe to netcat.
 
 ### Install Pipeline Viewer
 
