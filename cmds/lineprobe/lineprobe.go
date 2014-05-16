@@ -43,6 +43,7 @@ The default operation for lineprobe is to forward values directly to the
 lineviewer collector. Lineprobe also has the capability to perform simple
 operations on the raw data. Operations have this form:
 
+   -noop
    -percentile=<samples>,<percentile>
    -avg=<samples>[,<showStdev>]
    -scale=1.0
@@ -126,6 +127,7 @@ import (
 	"os/exec"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	// third-party
@@ -155,6 +157,7 @@ var (
 	calcNone = &NoOperation{}
 	calcAvg  = &AvgOperation{}
 	calcPerc = &PercOperation{}
+	calcNoop = flag.Bool("noop", false, "Enable raw data plot when other operations are specified.")
 )
 
 func initFlags() {
@@ -188,8 +191,8 @@ func checkFlags() {
 	} else {
 		debugLogger = log.New(ioutil.Discard, "", 0)
 	}
-	if len(calcOperations) == 0 {
-		// create one default operation if no others were specified.
+	if len(calcOperations) == 0 || *calcNoop {
+		// Create one default operation (if no others were specified, or user specified the -noop plot).
 		calcNone.Set("")
 	}
 }
@@ -451,7 +454,7 @@ func (r *ValueReader) ReadValue() (float64, error) {
 		return 0.0, err
 	}
 
-	f, err := strconv.ParseFloat(string(out), 64)
+	f, err := strconv.ParseFloat(strings.TrimSpace(string(out)), 64)
 	if err != nil {
 		return 0.0, err
 	}
