@@ -18,8 +18,12 @@ func setupClient(t *testing.T) {
 	// wait until the server is waiting
 	<-syncAccept
 
-	writer := s.Connect()
-	_, err := writer.Write([]byte(clientMessage))
+	writer, err := s.Connect()
+	if err != nil {
+		t.Errorf("Failed write")
+		return
+	}
+	_, err = writer.Write([]byte(clientMessage))
 	if err != nil {
 		t.Errorf("Failed write")
 		return
