@@ -174,7 +174,7 @@ type sampleSet struct {
 
 type ValueWriter struct {
 	writer  *bufio.ReadWriter
-	server  *lineserver.Server
+	server  lineserver.Server
 	op      Operation
 	samples *sampleSet
 }
