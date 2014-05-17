@@ -20,6 +20,7 @@ import (
 	"image/color"
 	"io"
 	"math"
+	"sync"
 	"time"
 
 	// third party
@@ -27,6 +28,11 @@ import (
 )
 
 var defaultCollection *Collection
+var lock *sync.RWMutex
+
+func init() {
+	lock = &sync.RWMutex{}
+}
 
 // A Collection is the root container.
 // Axes is a map, so that Axis objects can be referred to by name, see GetAxis().
@@ -105,6 +111,9 @@ func (c *Collection) GetAxis(name string) *Axis {
 }
 
 func (c *Collection) AddAxis(name, xlabel, ylabel string) *Axis {
+	lock.Lock()
+	defer lock.Unlock()
+
 	axis := &Axis{name, xlabel, ylabel, make(map[string]*Line), false, 0, 0, false}
 	c.Axes[name] = axis
 	return axis
@@ -120,6 +129,9 @@ func (ax *Axis) GetLine(name string) *Line {
 }
 
 func (ax *Axis) AddLine(name string) *Line {
+	lock.Lock()
+	defer lock.Unlock()
+
 	line := &Line{}
 	line.Name = name
 	line.Style = plotter.NextStyle()
@@ -146,6 +158,9 @@ func (line *Line) SetColor(hexColor string) {
 
 // Append adds a new x,y coordinate to the end of the Line.
 func (line *Line) Append(x, y float64) {
+	lock.Lock()
+	defer lock.Unlock()
+
 	line.X = append(line.X, x)
 	line.Y = append(line.Y, y)
 	line.xyrange.updateXYrange(x, y)
@@ -153,16 +168,25 @@ func (line *Line) Append(x, y float64) {
 
 // Count returns the length of Line X and Y coordinates.
 func (line *Line) Count() (int, int) {
+	lock.RLock()
+	defer lock.RUnlock()
+
 	return len(line.X), len(line.Y)
 }
 
 func (line *Line) RangeX() (float64, float64) {
+	lock.RLock()
+	defer lock.RUnlock()
+
 	min := line.xyrange.min_x - 0.1
 	max := line.xyrange.max_x + 0.1
 	return min, max
 }
 
 func (line *Line) RangeY() (float64, float64) {
+	lock.RLock()
+	defer lock.RUnlock()
+
 	min := line.xyrange.min_y - 0.1
 	max := line.xyrange.max_y + 0.1
 	return min, max
@@ -170,6 +194,9 @@ func (line *Line) RangeY() (float64, float64) {
 
 // MaxX returns the greatest X coordinate for all Lines in this Axis.
 func (ax *Axis) MaxX() float64 {
+	lock.RLock()
+	defer lock.RUnlock()
+
 	xmax := 0.0
 	if len(ax.Lines) == 0 {
 		return xmax
@@ -186,6 +213,8 @@ func (ax *Axis) MaxX() float64 {
 }
 
 func (c *Collection) Plot(writer io.Writer, width, height int, offset float64, samples float64) error {
+	lock.RLock()
+	defer lock.RUnlock()
 
 	fig := plotter.NewFigure(c.Usetime)
 	for _, ax := range c.Axes {
