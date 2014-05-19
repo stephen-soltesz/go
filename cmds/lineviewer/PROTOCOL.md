@@ -17,22 +17,22 @@ color, line label, and axis.
 
 All data sent by the client should match this approximate BNF pattern:
 
-  <all-data> ::= <directives> <value-stream>
-  <directives> ::= <style-set> | <command> <EOL>
-  <command> ::= exit | reset
-  <style-set> ::= <style-set> <style-element> <EOL> 
-  <style-element> ::= "axis:" <axis-name> ":" <x-label> ":" <y-label> |
+    <all-data> ::= <directives> <value-stream>
+    <directives> ::= <style-set> | <command> <EOL>
+    <command> ::= exit | reset
+    <style-set> ::= <style-set> <style-element> <EOL> 
+    <style-element> ::= "axis:" <axis-name> ":" <x-label> ":" <y-label> |
 	                    "axis-scale:" <x-scale> ":" <y-scale> |
 	                    "axis-ylimit:" <ymin> ":" <ymax> |
 	                    "axis-xlimit:" <xmin> ":" <xmax> |
 	                    "line-label:" <line-name> |
 	                    "line-color:" <line-color>
-  <x-scale> ::= <ignored>
-  <y-scale> ::= log | linear
-	<line-color> ::= "#" [0-f]{6}
+    <x-scale> ::= <ignored>
+    <y-scale> ::= log | linear
+    <line-color> ::= "#" [0-f]{6}
 
-  <value-stream> ::= <value-stream> <value>
-  <value> ::= <float> <EOL> | <EOF>
+    <value-stream> ::= <value-stream> <value>
+    <value> ::= <float> <EOL> | <EOF>
 
 After the server receives EOF, the connection has closed, and this terminates
 the line.
