@@ -81,6 +81,7 @@ func (client *CollectorClient) readSettings(val string) {
 			debugLogger.Print("CLIENT: axis name: ", fields[1])
 			client.axis = client.collector.GetAxis(fields[1])
 			if len(fields) >= 4 {
+				// TODO: only assign these once.
 				client.axis.XLabel = fields[2]
 				client.axis.YLabel = fields[3]
 			}
