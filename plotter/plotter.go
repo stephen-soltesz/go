@@ -6,35 +6,38 @@ package plotter
 
 import (
 	"fmt"
-	"image"
+	//"image"
 	"image/color"
-	"image/png"
+	//"image/png"
 	"io"
 	"os"
 	"path"
 	"time"
 
 	// third-party
-	"code.google.com/p/freetype-go/freetype"
-	"code.google.com/p/freetype-go/freetype/truetype"
+	//"code.google.com/p/freetype-go/freetype"
+	//"code.google.com/p/freetype-go/freetype/truetype"
 	//"github.com/vdobler/chart"
 	//"github.com/vdobler/chart/imgg"
 	//"github.com/vdobler/chart/svgg"
 	"github.com/ajstarks/svgo"
 	"github.com/stephen-soltesz/chart"
-	"github.com/stephen-soltesz/chart/imgg"
+	//"github.com/stephen-soltesz/chart/imgg"
 	"github.com/stephen-soltesz/chart/svgg"
 )
 
-type Style chart.Style
+type Figure interface {
+	Render(writer io.Writer, width, height int) error
+	AddChart(title, xlabel, ylabel string, xmin, xmax float64) *Chart
+}
 
-type Figure struct {
+type implFigure struct {
 	Charts   []*Chart
 	fontName string
 	usetime  bool
 }
 
-var fontCache map[string]*truetype.Font
+type Style chart.Style
 
 type Chart struct {
 	chart.ScatterChart
@@ -61,39 +64,14 @@ func autoStyle(s int) func() Style {
 
 var NextStyle = autoStyle(0)
 
-func loadFont(fontfile string) *truetype.Font {
-	var font *truetype.Font
-	var ok bool
-	var err error
-	var data []byte
-
-	// Read the font data once.
-	if fontCache == nil {
-		fontCache = make(map[string]*truetype.Font)
-	}
-	fontpath := "res/" + fontfile
-	if font, ok = fontCache[fontpath]; !ok {
-		data, err = Asset(fontpath)
-		if err != nil {
-			return nil
-		}
-		font, err = freetype.ParseFont(data)
-		if err != nil {
-			return nil
-		}
-		fontCache[fontpath] = font
-	}
-	return font
-}
-
-func NewFigure(usetime bool) *Figure {
-	f := Figure{}
+func NewFigure(usetime bool) Figure {
+	f := implFigure{}
 	f.fontName = "FreeSans.ttf"
 	f.usetime = usetime
 	return &f
 }
 
-func (f *Figure) RenderFile(filename string, width, height int) error {
+func RenderToFile(f Figure, filename string, width, height int) error {
 	var err error
 	var imgFile *os.File
 	dir, file := path.Split(filename)
@@ -118,7 +96,7 @@ func (f *Figure) RenderFile(filename string, width, height int) error {
 	return nil
 }
 
-func (f *Figure) RenderSVG(writer io.Writer, width, height int) error {
+func (f *implFigure) Render(writer io.Writer, width, height int) error {
 	whiteBG := color.RGBA{0xee, 0xee, 0xee, 0xff}
 	count := len(f.Charts)
 
@@ -135,21 +113,7 @@ func (f *Figure) RenderSVG(writer io.Writer, width, height int) error {
 	return nil
 }
 
-func (f *Figure) Render(writer io.Writer, width, height int) error {
-	whiteBG := color.RGBA{0xee, 0xee, 0xee, 0xff}
-	image := image.NewRGBA(image.Rect(0, 0, width, height))
-	count := len(f.Charts)
-	font := loadFont(f.fontName)
-
-	for i, ax := range f.Charts {
-		igr := imgg.AddTo(image, 0, i*(height/count), width, (height / count), whiteBG, font, nil)
-		ax.Plot(igr)
-	}
-
-	return png.Encode(writer, image)
-}
-
-func (f *Figure) AddChart(title, xlabel, ylabel string, xmin, xmax float64) *Chart {
+func (f *implFigure) AddChart(title, xlabel, ylabel string, xmin, xmax float64) *Chart {
 	axis := Chart{chart.ScatterChart{}}
 
 	axis.Title = title
@@ -232,5 +196,47 @@ func (ax *Chart) PlotArea() (int, int, int, int) {
   w1 := ax.XRange.Data2Screen(ax.XRange.Max) - ax.XRange.Data2Screen(ax.XRange.Min)
   h1 := ax.YRange.Data2Screen(ax.YRange.Max) - ax.YRange.Data2Screen(ax.YRange.Min)
   return x1, y1, w1, h1
+}
+*/
+/*
+func (f *implFigure) RenderPNG(writer io.Writer, width, height int) error {
+	whiteBG := color.RGBA{0xee, 0xee, 0xee, 0xff}
+	image := image.NewRGBA(image.Rect(0, 0, width, height))
+	count := len(f.Charts)
+	font := loadFont(f.fontName)
+
+	for i, ax := range f.Charts {
+		igr := imgg.AddTo(image, 0, i*(height/count), width, (height / count), whiteBG, font, nil)
+		ax.Plot(igr)
+	}
+
+	return png.Encode(writer, image)
+}
+
+var fontCache map[string]*truetype.Font
+
+func loadFont(fontfile string) *truetype.Font {
+	var font *truetype.Font
+	var ok bool
+	var err error
+	var data []byte
+
+	// Read the font data once.
+	if fontCache == nil {
+		fontCache = make(map[string]*truetype.Font)
+	}
+	fontpath := "res/" + fontfile
+	if font, ok = fontCache[fontpath]; !ok {
+		data, err = Asset(fontpath)
+		if err != nil {
+			return nil
+		}
+		font, err = freetype.ParseFont(data)
+		if err != nil {
+			return nil
+		}
+		fontCache[fontpath] = font
+	}
+	return font
 }
 */
