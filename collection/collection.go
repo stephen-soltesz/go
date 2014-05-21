@@ -239,5 +239,5 @@ func (c *Collection) Plot(writer io.Writer, width, height int, offset float64, s
 		}
 	}
 
-	return fig.RenderSVG(writer, width, height)
+	return fig.Render(writer, width, height)
 }
