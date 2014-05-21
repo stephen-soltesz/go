@@ -131,6 +131,7 @@ import (
 	"time"
 
 	// third-party
+	"github.com/stephen-soltesz/go/collection/token"
 	"github.com/stephen-soltesz/go/lineserver"
 )
 
@@ -334,7 +335,7 @@ func (w *ValueWriter) sendClientSettings() error {
 	var err error
 	if *exitServer {
 		debugLogger.Println("Sending exit")
-		_, err := w.writer.WriteString("EXIT\n")
+		_, err := w.writer.WriteString(token.Exit + "\n")
 		if err != nil {
 			return err
 		}
@@ -344,20 +345,20 @@ func (w *ValueWriter) sendClientSettings() error {
 		NewValueWriter(newNoOperation())
 		os.Exit(0)
 	}
-	axisSetting := "axis:" + *axisName + ":" + *xlabelName + ":" + *ylabelName + "\n"
+	axisSetting := token.Axis + ":" + *axisName + ":" + *xlabelName + ":" + *ylabelName + "\n"
 	if _, err = w.writer.WriteString(axisSetting); err != nil {
 		return err
 	}
 
 	if *ylimitValue != "" {
-		limitSetting := "limit:" + *ylimitValue + "\n"
+		limitSetting := token.AxisYLimit + ":" + *ylimitValue + "\n"
 		if _, err := w.writer.WriteString(limitSetting); err != nil {
 			return err
 		}
 	}
 
 	if *yaxisScale {
-		yaxisScale := "yaxisscale:log\n"
+		yaxisScale := token.AxisScale + ":" + token.ScaleLog + "\n"
 		if _, err := w.writer.WriteString(yaxisScale); err != nil {
 			return err
 		}
@@ -369,11 +370,11 @@ func (w *ValueWriter) sendClientSettings() error {
 	}
 
 	if *lineName != "" {
-		name = "label:" + *lineName + name + "\n"
+		name = token.LineLabel + ":" + *lineName + name + "\n"
 	} else if *command != "" {
-		name = "label:" + *command + name + "\n"
+		name = token.LineLabel + ":" + *command + name + "\n"
 	} else {
-		name = "label:" + fmt.Sprintf("Thread-%d", os.Getpid()) + name + "\n"
+		name = token.LineLabel + ":" + fmt.Sprintf("Thread-%d", os.Getpid()) + name + "\n"
 	}
 
 	if _, err = w.writer.WriteString(name); err != nil {
@@ -381,7 +382,7 @@ func (w *ValueWriter) sendClientSettings() error {
 	}
 
 	if *lineColor != "" {
-		colorSetting := fmt.Sprintf("color:%s\n", *lineColor)
+		colorSetting := fmt.Sprintf("%s:%s\n", token.LineColor, *lineColor)
 		if _, err := w.writer.WriteString(colorSetting); err != nil {
 			return err
 		}

@@ -12,6 +12,7 @@ import (
 
 	// third-party
 	"github.com/stephen-soltesz/go/collection"
+	"github.com/stephen-soltesz/go/collection/token"
 	"github.com/stephen-soltesz/go/lineserver"
 )
 
@@ -65,19 +66,22 @@ func (client *CollectorClient) readSettings(val string) {
 	fields := strings.Split(val, ":")
 	if len(fields) == 1 {
 		// single command
-		if fields[0] == "EXIT" {
+		switch fields[0] {
+		case token.Exit:
 			fmt.Println("Got EXIT signal")
 			exitEarly = true
+			// Actually return from function, to proceed with exit.
 			return
-		} else if fields[0] == "RESET" {
+		case token.Reset:
 			fmt.Println("NOT YET SUPPORTED")
-		} else {
+		default:
 			// unknown command
 			fmt.Println("Unknown command.", fields[0])
 		}
 	} else if len(fields) >= 2 {
 		// this is a key-value setting.
-		if fields[0] == "axis" {
+		switch fields[0] {
+		case token.Axis:
 			debugLogger.Print("CLIENT: axis name: ", fields[1])
 			client.axis = client.collector.GetAxis(fields[1])
 			if len(fields) >= 4 {
@@ -85,21 +89,22 @@ func (client *CollectorClient) readSettings(val string) {
 				client.axis.XLabel = fields[2]
 				client.axis.YLabel = fields[3]
 			}
-		} else if fields[0] == "label" {
+		case token.LineLabel:
 			if client.axis != nil {
 				debugLogger.Print("CLIENT: label name: ", fields[1])
 				client.line = client.axis.GetLine(fields[1])
 			}
-		} else if fields[0] == "color" {
+		case token.LineColor:
 			if client.line != nil {
 				debugLogger.Print("CLIENT: color: ", fields[1])
 				client.line.SetColor(fields[1])
 			}
-		} else if fields[0] == "yaxisscale" {
-			if fields[1] == "log" {
+		case token.AxisScale:
+			// TODO: change parser to look at x & y.
+			if fields[1] == token.ScaleLog {
 				client.axis.Uselog = true
 			}
-		} else if fields[0] == "limit" {
+		case token.AxisYLimit:
 			if len(fields) == 3 {
 				client.axis.Ylimit = true
 				if ymin, err := strconv.ParseFloat(strings.TrimSpace(fields[1]), 64); err == nil {
