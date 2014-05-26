@@ -139,6 +139,7 @@ var (
 	hostname    = flag.String("hostname", "localhost:3131", "Host and port of view server.")
 	command     = flag.String("command", "", "Command to run every second.")
 	interval    = flag.Float64("interval", 1.0, "How often to run command.")
+	figTitle    = flag.String("title", "", "Title for complete figure.")
 	axisName    = flag.String("axis", "default", "Name of axis to associate this line.")
 	xlabelName  = flag.String("xlabel", "", "X-Label for axis.")
 	ylabelName  = flag.String("ylabel", "", "Y-Label for axis.")
@@ -348,6 +349,13 @@ func (w *ValueWriter) sendClientSettings() error {
 	axisSetting := token.Axis + ":" + *axisName + ":" + *xlabelName + ":" + *ylabelName + "\n"
 	if _, err = w.writer.WriteString(axisSetting); err != nil {
 		return err
+	}
+
+	if *figTitle != "" {
+		figTitleSetting := token.FigureTitle + ":" + *figTitle + "\n"
+		if _, err := w.writer.WriteString(figTitleSetting); err != nil {
+			return err
+		}
 	}
 
 	if *ylimitValue != "" {

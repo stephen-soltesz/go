@@ -81,6 +81,8 @@ func (client *CollectorClient) readSettings(val string) {
 	} else if len(fields) >= 2 {
 		// this is a key-value setting.
 		switch fields[0] {
+		case token.FigureTitle:
+			client.collector.Title = fields[1]
 		case token.Axis:
 			debugLogger.Print("CLIENT: axis name: ", fields[1])
 			client.axis = client.collector.GetAxis(fields[1])
