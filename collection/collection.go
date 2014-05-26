@@ -37,40 +37,41 @@ func init() {
 // A Collection is the root container.
 // Axes is a map, so that Axis objects can be referred to by name, see GetAxis().
 type Collection struct {
-	Title   string
-	Axes    map[string]*Axis
-	Usetime bool
+	Title   string           `json:"title"`
+	Axes    map[string]*Axis `json:"axes"`
+	Usetime bool             `json:"usetime"`
 }
 
 // A Collection contains one or more Axis objects.
 type Axis struct {
-	Name       string
-	XLabel     string
-	YLabel     string
-	Lines      map[string]*Line
-	Ylimit     bool
-	Ymin, Ymax float64
-	Uselog     bool
+	Name   string           `json:"name"`
+	XLabel string           `json:"xlabel"`
+	YLabel string           `json:"ylabel"`
+	Lines  map[string]*Line `json:"lines"`
+	Ylimit bool             `json:"ylimit"`
+	Ymin   float64          `json:"ymin"`
+	Ymax   float64          `json:"ymax"`
+	Uselog bool             `json:"uselog"`
 }
 
 // An Axis contains one or more Line objects.
 // The X and Y arrays contain coordinates of each point on the Line.
 type Line struct {
-	Name  string
-	Style plotter.Style
-	X     []float64
-	Y     []float64
+	Name  string        `json:"name"`
+	Style plotter.Style `json:"style"`
+	X     []float64     `json:"x"`
+	Y     []float64     `json:"y"`
 
 	// internal book keeping
-	xyrange
+	xyrange `json:"xyrange"`
 }
 
 type xyrange struct {
 	// internal book keeping
-	max_x float64
-	min_x float64
-	max_y float64
-	min_y float64
+	max_x float64 `json:"max_x"`
+	min_x float64 `json:"min_x"`
+	max_y float64 `json:"max_y"`
+	min_y float64 `json:"min_y"`
 }
 
 func initXYrange() xyrange {
