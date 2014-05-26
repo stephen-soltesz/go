@@ -26,6 +26,7 @@ func startViewServer(host string, port int) {
 	http.HandleFunc("/", serveHome)
 	http.HandleFunc("/svg", serveSvg)
 	http.HandleFunc("/config", serveConfig)
+	http.HandleFunc("/json", serveJSON)
 
 	if err := http.ListenAndServe(addr, nil); err != nil {
 		log.Fatal("ListenAndServe: ", err)
@@ -59,6 +60,17 @@ func serveConfig(w http.ResponseWriter, r *http.Request) {
 	cfg := &Config{Success: true, WidthPixels: *plotWidth,
 		HeightPixels: *plotHeight, PlotSamples: *plotSamples}
 	msg, err := json.Marshal(cfg)
+	if err != nil {
+		http.Error(w, "Server Error", 500)
+		return
+	}
+	w.Write(msg)
+	return
+}
+
+func serveJSON(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	msg, err := json.Marshal(collection.Default())
 	if err != nil {
 		http.Error(w, "Server Error", 500)
 		return
