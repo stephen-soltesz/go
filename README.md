@@ -1,7 +1,8 @@
 ThinkSeeDo Go Packages
 ======================
 
-Command line tools are in the `cmds` directory.
+Command line tools are in the `cmds` directory. Library pacakges are in the
+current directory.
 
 ### Motivation
 
