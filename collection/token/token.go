@@ -2,6 +2,7 @@
 package token
 
 const (
+	FigureTitle = "title"
 	Axis        = "axis"
 	AxisScale   = "axis-scale"
 	AxisXLimit  = "axis-xlimit"
