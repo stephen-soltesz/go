@@ -74,8 +74,10 @@ type xyrange struct {
 }
 
 func initXYrange() xyrange {
-	return xyrange{math.SmallestNonzeroFloat64, math.MaxFloat64,
-		math.SmallestNonzeroFloat64, math.MaxFloat64}
+	return xyrange{max_x: math.SmallestNonzeroFloat64,
+		min_x: math.MaxFloat64,
+		max_y: math.SmallestNonzeroFloat64,
+		min_y: math.MaxFloat64}
 }
 
 func (xy *xyrange) updateXYrange(x, y float64) {
@@ -114,7 +116,14 @@ func (c *Collection) AddAxis(name, xlabel, ylabel string) *Axis {
 	lock.Lock()
 	defer lock.Unlock()
 
-	axis := &Axis{name, xlabel, ylabel, make(map[string]*Line), false, 0, 0, false}
+	axis := &Axis{Name: name,
+		XLabel: xlabel,
+		YLabel: ylabel,
+		Lines:  make(map[string]*Line),
+		Ylimit: false,
+		Ymin:   0,
+		Ymax:   0,
+		Uselog: false}
 	c.Axes[name] = axis
 	return axis
 }
@@ -132,10 +141,7 @@ func (ax *Axis) AddLine(name string) *Line {
 	lock.Lock()
 	defer lock.Unlock()
 
-	line := &Line{}
-	line.Name = name
-	line.Style = plotter.NextStyle()
-	line.xyrange = initXYrange()
+	line := &Line{Name: name, Style: plotter.NextStyle(), xyrange: initXYrange()}
 	ax.Lines[name] = line
 	return line
 }
